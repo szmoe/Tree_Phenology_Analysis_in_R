@@ -1,0 +1,79 @@
+---
+title: "Tree Phenology Analysis with R"
+subtitle: "***A Learning Logbook***"
+author: "SM"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+format:
+  html:
+    toc: true
+    toc_float: true
+    toc-title: "Contents"
+    toc-depth: 5
+    toc-location: left
+    number_sections: true
+    fig_caption: true
+    code-tools: true
+    code-fold: true
+    code-summary: 'Show code'
+    code-link: true
+    code_highlight: solarized-light
+    code_download: true
+    theme: journal
+    highlight: solarized-light
+    smooth-scroll: true
+---
+
+```{r setup, include=FALSE, message  = FALSE, warning = F}
+knitr::opts_chunk$set(echo = TRUE,  message = FALSE,  warning = FALSE,  tidy = TRUE)
+
+library(chillR)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+```
+
+<br>
+
+***This document records my notes and progress in the course titled "Tree Phenology Analysis with R."***
+
+<br>
+
+## Chapter 3: Tree Dormancy
+
+
+### Introduction to dormancy
+
+<br>
+
+- Fruit trees go into dormant state to survive unfavorable conditions in winter
+
+- Dormancy phases: 
+    - **Dormancy establishment** (controlled by environmental signals&mdash; Day length/photoperiod, Temperature)
+    - **Endo-dormancy** (controlled by plants' endogenous factors&mdash; their abilities to grow even in unfavorable conditions; a period of rest and then regrow/ endo-dormancy is overcome once the trees have experienced a certain level of chill but they don't immediately resume growth)
+    - **Eco-dormancy** (trees are acclimated&mdash; no morphological changes, but not deeply dormant; (warm) temp is the main environmental driver)
+    - **Growth resumption** (first apparent morphological changes occur in end of winter or earliest spring depending on species and cultivars&mdash; trees quickly un-acclimatized to grow and become sensitive to freezing temperature before buds burst? Warm temp promotes growth)
+    
+\n
+
+- Physiological processes that regulate dormancy
+    - **Transport at both whole-plant and cellular level:** The transport of water and solutes stop during dormancy both at the whole plant and cellular levels within the meristems.
+    - **Phytohormone dynamics:** Plant hormones are short and long distance signalling compounds acting in a very low concentrations. Myoregulators for plants growth and development, as well as mediate responses to biotic and abiotic stressors. 
+    - **Genetic and epigenetic regulation:** A group of genes related to dormancy&mdash; regulation of bad dormancy.
+    - **Dynamics of nonstructural carbohydrates:** Non-structural carbohydrates have three main functions&dash; energy esterase?, transport and supply, and osmotic regulation and signaling (these varies within and between seasons).
+    
+<br>
+
+### Dormancy physiology
+
+<br>
+
+- 
+
+    
+    
+    
+    
+
+
+
+
