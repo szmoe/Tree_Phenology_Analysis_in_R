@@ -6,18 +6,18 @@ date: "`r format(Sys.time(), '%B %d, %Y')`"
 format:
   html:
     toc: true
-    toc_float: true
+    toc-float: true
     toc-title: "Contents"
-    toc-depth: 5
+    toc-depth: 9
     toc-location: left
-    number_sections: true
-    fig_caption: true
+    number-sections: false
+    fig-caption: true
     code-tools: true
     code-fold: true
     code-summary: 'Show code'
     code-link: true
-    code_highlight: solarized-light
-    code_download: true
+    code-highlight: solarized-light
+    code-download: true
     theme: journal
     highlight: solarized-light
     smooth-scroll: true
@@ -38,12 +38,13 @@ library(tidyr)
 
 <br>
 
+
 ## Chapter 3: Tree Dormancy
 
 
-### Introduction to dormancy
+### <span style="color:#71797E">3.1</span>&nbsp; Introduction to dormancy
 
-<br>
+<div style="height: 18px;"></div>
 
 - Fruit trees go into dormant state to survive unfavorable conditions in winter
 
@@ -63,11 +64,131 @@ library(tidyr)
     
 <br>
 
-### Dormancy physiology
+### <span style="color:#71797E">3.2</span>&nbsp; Dormancy physiology
+
+<div style="height: 18px;"></div>
+
+![](./pic/ch3_1.png)
+
+Reference: [*A Conceptual Framework for Winter Dormancy in Deciduous Trees (Fadón et al., 2020)*](https://www.mdpi.com/2073-4395/10/2/241)
 
 <br>
 
-- 
+### <span style="color:#71797E">3.3</span>&nbsp; Experimental and statistical determination of the chilling and forcing periods
+
+<div style="height: 18px;"></div>
+
+- High chill accumulation during endodormancy advances flowering dates, but similarly cool temperatures during ecodormancy may cause flowering delays. 
+
+- Endo- and eco- dormancy occur under the same phenological stage, but the temperatures have the opposite effect on flowering according to the dormancy phase. 
+
+- Endo- Vs. Eco- dormancy phase differentiation: 
+    - **Empirically** (See if there is growth after chilling period&mdash; whether the chill period is overcome to allow forcing period)
+    - **Statistically** (Long phenological data sets and temperature records&mdash; estimate the date of chilling fulfillment based on the long series of phenological observations, flowering dates and relating them with previous temperature records)
+    
+\n
+
+- `chillR` package to perform PLS analysis with phenology data and temperature, which gives two outputs:
+    - **Model coefficients** which indicate the strength and the sense of the influence 
+    - **Variable important in the projections (VIP)**, which points out the significant importance of the model coefficient values&mdash; values from 0.8 are considered significant??
+   
+<br>
+
+### <span style="color:#71797E">3.4</span>&nbsp; Phenology record and BBCH scale
+
+<div style="height: 18px;"></div>
+
+- **Phenology** is the study of periodic events in **biological life cycles** (e.g. seasonal changes in trees) and how these are influenced **by seasonal and interannual variations** in climate.
+
+- Application of phenology in agriculture:
+    - Select suitable crops and varieties (to organize the cropping schedules, organize the crop rotation)
+    - Forecasts of plant development and harvest dates (e.g. to evaluate the risk of frost damage)
+    - Timing of the agricultural practices&mdash; irrigation, fertilization, crop protection, etc. 
+    
+\n
+
+- Trees go through many developmental stages over the course of the year, and these are usually referred to by a two-digit code. <span style="color:grey">*(Read more [here.](https://www.openagrar.de/servlets/MCRFileNodeServlet/openagrar_derivate_00010428/BBCH-Skala_en.pdf))*</span>
+
+  - Principal growth stages&mdash; describe time spans (0-9)
+  - Secondary growth stages&mdash; precise steps in plant development (0-9)
+      
+
+<br>
+
+### <span style="color:#71797E">3.5</span>&nbsp; Exercises on tree dormancy
+
+<div style="height: 18px;"></div>
+
+***1. Put yourself in the place of a breeder who wants to calculate the temperature requirements of a newly released cultivar. Which method will you use to calculate the chilling and forcing periods? Please justify your answer.***
+
+As a breeder, I will use the empirical method rather than the statistical method to calculate the chilling and forcing periods in this particular case, for two reasons:
+
+- It requires little statistical expertise, as many breeders may not have statistical expertise, and hiring an expert could incur extra costs.
+
+- The statistical method relies on long phenological data sets and temperature records. Since this cultivar is newly released, such longitudinal data sets and records may not be available for statistical computation.
+
+
+<br>
+
+***2. Which are the advantages (2) of the BBCH scale compared with earlier scales?***
+
+- Covers the whole development of the plant, rather than development of only the flower buds as in the traditional scale
+
+- Provides a general frame for all the species, while the traditional scale is species specific
+  
+<br>
+
+***3. Classify the following phenological stages of sweet cherry according to the BBCH scale:***
+
+![***Phenological stages of cherry***](./pic/ch3_2.png)
+
+From left to right:
+
+- BBCH stage 54 (Inflorescence enclosed by light green scales)
+
+- BBCH stage 65 (Full flowering: at least 50% of flowers open, first petals falling)
+
+- BBCH stage 89 (Fruit ripe for harvesting for immediate consumption&mdash; fruit have typical taste and firmness)
+    - <span style="color:grey">*I chose stage 89, rather than the fruit-picking stage 87, due to the cherries' uniform and rich red color. However, further assessment of their firmness, taste, and aroma is required to accurately confirm the stage.*</span>
+
+<br>
+
+## Chapter 4: Climate change and impact projection
+
+### <span style="color:#71797E">4.1</span>&nbsp; The drivers of climate change
+
+<div style="height: 18px;"></div>
+
+In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming&mdash; particularly CO~4~, CH~4~ and N~2~O in the atmosphere.
+
+<br>
+
+### <span style="color:#71797E">4.2</span>&nbsp; What we’ve already seen
+
+<div style="height: 18px;"></div>
+
+This lecture taught me about the alarming increase in global temperatures in recent decades due to human activities, and how even a slight rise in temperature can cause significant shifts in the Earth's land areas. The lecture also discussed these trends on a global scale, as well as specifically in Germany. Additionally, there was a brief discussion on precipitation trends in Germany.
+
+<br>
+
+### <span style="color:#71797E">4.3</span>&nbsp; Future scenarios
+
+<div style="height: 18px;"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     
     
