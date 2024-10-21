@@ -5,7 +5,7 @@
 <meta name="generator" content="quarto-1.5.57">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="SM">
-<meta name="dcterms.date" content="2024-10-20">
+<meta name="dcterms.date" content="2024-10-21">
 <title>Tree Phenology Analysis with R</title>
 <style>
 code{white-space: pre-wrap;}
@@ -114,7 +114,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 20, 2024</p>
+      <p class="date">October 21, 2024</p>
     </div>
   </div>
   
@@ -235,9 +235,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong><em>1. Put yourself in the place of a breeder who wants to calculate the temperature requirements of a newly released cultivar. Which method will you use to calculate the chilling and forcing periods? Please justify your answer.</em></strong></p>
 <p>As a breeder, I will use the empirical method rather than the statistical method to calculate the chilling and forcing periods in this particular case, for two reasons:</p>
 <ul>
-<li><p>It requires little statistical expertise, as many breeders may not have statistical expertise, and hiring an expert could incur extra costs.</p></li>
+<li><p>It requires little statistical expertise, as many breeders may not have in-depth statistical expertise, and hiring an expert could incur extra costs.</p></li>
 <li><p>The statistical method relies on long phenological data sets and temperature records. Since this cultivar is newly released, such longitudinal data sets and records may not be available for statistical computation.</p></li>
 </ul>
+<p>Anyway, after I looked up the definition of plant breeder, they are scientists, so statistics may not be a problem. In that case, start with empirical first and then combine with statistical method as more data accumulates. 😁</p>
 <p><br></p>
 <p><strong><em>2. Which are the advantages (2) of the BBCH scale compared with earlier scales?</em></strong></p>
 <ul>
@@ -268,7 +269,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div style="height: 18px;">
 
 </div>
-<p>In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming— particularly CO<sub>4</sub>, CH<sub>4</sub> and N<sub>2</sub>O in the atmosphere.</p>
+<p>In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming— particularly CO<sub>2</sub>, CH<sub>4</sub> and N<sub>2</sub>O in the atmosphere.</p>
 <p><br></p>
 </section><section id="what-weve-already-seen" class="level3"><h3 class="anchored" data-anchor-id="what-weve-already-seen">
 <span style="color:#71797E">4.2</span>&nbsp; What we’ve already seen</h3>
@@ -880,59 +881,59 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a>As a breeder, I will use the empirical method rather than the statistical method to calculate the chilling and forcing periods in this particular case, for two reasons:</span>
 <span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>It requires little statistical expertise, as many breeders may not have statistical expertise, and hiring an expert could incur extra costs.</span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>It requires little statistical expertise, as many breeders may not have in-depth statistical expertise, and hiring an expert could incur extra costs.</span>
 <span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The statistical method relies on long phenological data sets and temperature records. Since this cultivar is newly released, such longitudinal data sets and records may not be available for statistical computation.</span>
 <span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a>Anyway, after I looked up the definition of plant breeder, they are scientists, so statistics may not be a problem. In that case, start with empirical first and then combine with statistical method as more data accumulates. 😁</span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>***2. Which are the advantages (2) of the BBCH scale compared with earlier scales?***</span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Covers the whole development of the plant, rather than development of only the flower buds as in the traditional scale</span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a>***2. Which are the advantages (2) of the BBCH scale compared with earlier scales?***</span>
 <span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Provides a general frame for all the species, while the traditional scale is species specific</span>
-<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
-<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>***3. Classify the following phenological stages of sweet cherry according to the BBCH scale:***</span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Covers the whole development of the plant, rather than development of only the flower buds as in the traditional scale</span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Provides a general frame for all the species, while the traditional scale is species specific</span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a><span class="al">![***Phenological stages of cherry***](./pic/ch3_2.png)</span></span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a>***3. Classify the following phenological stages of sweet cherry according to the BBCH scale:***</span>
 <span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a>From left to right:</span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a><span class="al">![***Phenological stages of cherry***](./pic/ch3_2.png)</span></span>
 <span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 54 (Inflorescence enclosed by light green scales)</span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a>From left to right:</span>
 <span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 65 (Full flowering: at least 50% of flowers open, first petals falling)</span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 54 (Inflorescence enclosed by light green scales)</span>
 <span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 89 (Fruit ripe for harvesting for immediate consumption<span class="dv">&amp;mdash;</span> fruit have typical taste and firmness)</span>
-<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a><span class="ss">    - </span>&lt;span style="color:grey"&gt;*I chose stage 89, rather than the fruit-picking stage 87, due to the cherries' uniform and rich red color. However, further assessment of their firmness, taste, and aroma is required to accurately confirm the stage.*&lt;/span&gt;</span>
-<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 65 (Full flowering: at least 50% of flowers open, first petals falling)</span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BBCH stage 89 (Fruit ripe for harvesting for immediate consumption<span class="dv">&amp;mdash;</span> fruit have typical taste and firmness)</span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a><span class="ss">    - </span>&lt;span style="color:grey"&gt;*I chose stage 89, rather than the fruit-picking stage 87, due to the cherries' uniform and rich red color. However, further assessment of their firmness, taste, and aroma is required to accurately confirm the stage.*&lt;/span&gt;</span>
 <span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chapter 4: Climate change and impact projection</span></span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.1&lt;/span&gt;&amp;nbsp; The drivers of climate change</span></span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chapter 4: Climate change and impact projection</span></span>
 <span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.1&lt;/span&gt;&amp;nbsp; The drivers of climate change</span></span>
 <span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a>In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming<span class="dv">&amp;mdash;</span> particularly CO~4~, CH~4~ and N~2~O in the atmosphere.</span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
 <span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a>In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming<span class="dv">&amp;mdash;</span> particularly CO~2~, CH~4~ and N~2~O in the atmosphere.</span>
 <span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.2&lt;/span&gt;&amp;nbsp; What we’ve already seen</span></span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.2&lt;/span&gt;&amp;nbsp; What we’ve already seen</span></span>
 <span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a>This lecture taught me about the alarming increase in global temperatures in recent decades due to human activities, and how even a slight rise in temperature can cause significant shifts in the Earth's land areas. The lecture also discussed these trends on a global scale, as well as specifically in Germany. Additionally, there was a brief discussion on precipitation trends in Germany.</span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
 <span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>This lecture taught me about the alarming increase in global temperatures in recent decades due to human activities, and how even a slight rise in temperature can cause significant shifts in the Earth's land areas. The lecture also discussed these trends on a global scale, as well as specifically in Germany. Additionally, there was a brief discussion on precipitation trends in Germany.</span>
 <span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.3&lt;/span&gt;&amp;nbsp; Future scenarios</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;4.3&lt;/span&gt;&amp;nbsp; Future scenarios</span></span>
 <span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
 <span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a></span>
@@ -947,13 +948,17 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

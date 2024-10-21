@@ -123,9 +123,11 @@ Reference: [*A Conceptual Framework for Winter Dormancy in Deciduous Trees (Fad√
 
 As a breeder, I will use the empirical method rather than the statistical method to calculate the chilling and forcing periods in this particular case, for two reasons:
 
-- It requires little statistical expertise, as many breeders may not have statistical expertise, and hiring an expert could incur extra costs.
+- It requires little statistical expertise, as many breeders may not have in-depth statistical expertise, and hiring an expert could incur extra costs.
 
 - The statistical method relies on long phenological data sets and temperature records. Since this cultivar is newly released, such longitudinal data sets and records may not be available for statistical computation.
+
+Anyway, after I looked up the definition of plant breeder, they are scientists, so statistics may not be a problem. In that case, start with empirical first and then combine with statistical method as more data accumulates. üòÅ
 
 
 <br>
@@ -159,7 +161,7 @@ From left to right:
 
 <div style="height: 18px;"></div>
 
-In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming&mdash; particularly CO~4~, CH~4~ and N~2~O in the atmosphere.
+In this lecture, I learned about how the climate changes occurs, as well as the main and long-term drivers of climate change. I also learned about the impact of greenhouse gases on recent global warming&mdash; particularly CO~2~, CH~4~ and N~2~O in the atmosphere.
 
 <br>
 
@@ -174,6 +176,8 @@ This lecture taught me about the alarming increase in global temperatures in rec
 ### <span style="color:#71797E">4.3</span>&nbsp; Future scenarios
 
 <div style="height: 18px;"></div>
+
+
 
 
 
