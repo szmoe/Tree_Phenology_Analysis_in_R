@@ -177,6 +177,16 @@ This lecture taught me about the alarming increase in global temperatures in rec
 
 <div style="height: 18px;"></div>
 
+I learned a lot about future climate projections and the process to make those projections (RCP, GCM, downscaling, etc) in this lecture. I also learned about the importance of impact models&mdash; even after we achieved perfect climate projections, there is a need for multiple impact models, as there will still be uncertainty about the biological responses and how we should describe them. There was also a nice discussion on how the changes in the ocean circulation and other tipping points can drive climate change. The lecture also emphasized the importance of being concerned about the future and taking action now to ensure future generations can experience the same world we live in.
+
+<br>
+
+### <span style="color:#71797E">4.4</span>&nbsp; Impact projection approaches
+
+<div style="height: 18px;"></div>
+
+
+
 
 
 
