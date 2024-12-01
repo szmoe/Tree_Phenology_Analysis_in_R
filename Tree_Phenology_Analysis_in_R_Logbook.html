@@ -1385,7 +1385,7 @@ window.Quarto = {
         return(cumsum(CH_weights))
     else return(CH_weights)
 }
-&lt;bytecode: 0x131263420&gt;
+&lt;bytecode: 0x142a1fd00&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb41"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Apply Chilling_Hours() function to Winters_hours_gap dataset</span></span>
@@ -1414,7 +1414,7 @@ return(step_model(HourTemp, df = data.frame(lower = c(-1000,
     1.4, 2.4, 9.1, 12.4, 15.9, 18), upper = c(1.4, 2.4, 9.1, 
     12.4, 15.9, 18, 1000), weight = c(0, 0.5, 1, 0.5, 0, -0.5, 
     -1)), summ = summ))
-&lt;bytecode: 0x131823b30&gt;
+&lt;bytecode: 0x1431b3e10&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb45"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu">Utah_Model</span><span class="op">(</span><span class="va">Winters_hours_gaps</span><span class="op">$</span><span class="va">Temp</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1528,7 +1528,7 @@ return(step_model(HourTemp, df = data.frame(lower = c(-1000,
         return(cumsum(delta))
     return(delta)
 }
-&lt;bytecode: 0x1308c8e48&gt;
+&lt;bytecode: 0x12799d158&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb52"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu">Dynamic_Model</span><span class="op">(</span><span class="va">Winters_hours_gaps</span><span class="op">$</span><span class="va">Temp</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -8799,32 +8799,32 @@ intervals. Consider changing the time interval.</code></pre>
 <tr class="odd">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Year</td>
-<td style="text-align: right;">0.9924510</td>
+<td style="text-align: right;">0.9834952</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Month</td>
-<td style="text-align: right;">0.9831075</td>
+<td style="text-align: right;">0.9777770</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Two weeks</td>
-<td style="text-align: right;">0.9829367</td>
+<td style="text-align: right;">0.9810578</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Year</td>
-<td style="text-align: right;">0.8222815</td>
+<td style="text-align: right;">0.8352261</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Month</td>
-<td style="text-align: right;">0.8004605</td>
+<td style="text-align: right;">0.8068437</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Two weeks</td>
-<td style="text-align: right;">0.8042020</td>
+<td style="text-align: right;">0.8092777</td>
 </tr>
 </tbody>
 </table>
@@ -8914,7 +8914,7 @@ intervals. Consider changing the time interval.</code></pre>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb185"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># In this interpolation, some daytime or nighttime cycles were missed entirely, </span></span>
 <span><span class="co"># which can lead to substantial errors when calculating agroclimatic metrics, </span></span>
 <span><span class="co"># such as chill or heat stress, that are of particular concern during the </span></span>
-<span><span class="co"># warmest and coolest parts of the day.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span><span class="co">#warmest and coolest parts of the day.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <!-- -->
@@ -12032,7 +12032,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb186-2640"><a href="#cb186-2640" aria-hidden="true" tabindex="-1"></a><span class="in"># In this interpolation, some daytime or nighttime cycles were missed entirely, </span></span>
 <span id="cb186-2641"><a href="#cb186-2641" aria-hidden="true" tabindex="-1"></a><span class="in"># which can lead to substantial errors when calculating agroclimatic metrics, </span></span>
 <span id="cb186-2642"><a href="#cb186-2642" aria-hidden="true" tabindex="-1"></a><span class="in"># such as chill or heat stress, that are of particular concern during the </span></span>
-<span id="cb186-2643"><a href="#cb186-2643" aria-hidden="true" tabindex="-1"></a><span class="in"># warmest and coolest parts of the day.</span></span>
+<span id="cb186-2643"><a href="#cb186-2643" aria-hidden="true" tabindex="-1"></a><span class="in">#warmest and coolest parts of the day.</span></span>
 <span id="cb186-2644"><a href="#cb186-2644" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb186-2645"><a href="#cb186-2645" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb186-2646"><a href="#cb186-2646" aria-hidden="true" tabindex="-1"></a></span>
