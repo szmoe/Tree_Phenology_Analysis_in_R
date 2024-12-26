@@ -1,0 +1,9 @@
+"","mean_bias","stdev_bias","filled","gaps_remain"
+"Rottenburg-Kiebingen.Tmin",0.334,1.684,3300,1036
+"Rottenburg-Kiebingen.Tmax",-0.523,1.101,3300,1036
+"Reutlingen-Betzingen.Tmin",-0.627,1.126,352,684
+"Reutlingen-Betzingen.Tmax",-0.328,0.935,352,684
+"UrachBad/Erms.Tmin",0.017,1.455,682,2
+"UrachBad/Erms.Tmax",0.304,1.256,682,2
+"Hechingen.Tmin",0.824,1.585,2,0
+"Hechingen.Tmax",0.355,1.205,2,0

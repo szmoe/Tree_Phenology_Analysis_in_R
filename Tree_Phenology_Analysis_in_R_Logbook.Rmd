@@ -38,6 +38,7 @@ library(lubridate)
 library(reshape2)
 library(downlit)
 library(xml2)
+library(stats)
 ```
 
 <style>
@@ -2349,7 +2350,7 @@ kable(patched$statistics[[3]],
 
 - Besides the number of days for which information was taken from each auxiliary station (`filled`) and the number of gaps that remained afterwards (`gaps_remain`), we see two quality statistics:
     - the mean bias (`mean_bias`), i.e. the mean temperature difference&mdash; easy to address by setting threshold
-    - the standard deviation of the daily differences (`stdev_bias`)&mdash; more problematic as this indicates the extent of additional (possibly unsystematic) differences between stations (not sure this can be adjusted or not); so for now we should treat this as an exclusion criterion (i.e. if stdev_bias is above a certain value, we reject the station
+    - the standard deviation of the daily differences (`stdev_bias`)&mdash; more problematic as this indicates the extent of additional (possibly unsystematic) differences between stations (not sure this can be adjusted or not); so for now we should treat this as an exclusion criterion (i.e. if stdev_bias is above a certain value, we reject the station)
     
 \n
 
@@ -2604,7 +2605,7 @@ write.csv(monthly_bias_fixed$weather,
 # Select rows to match the chart in coursebook
 gap_Winters <- Winters_hours_gaps[39:350, ]
 
-# Add data in chillR format (for plotting)
+# Add date in chillR format (for plotting)
 gap_Winters <- add_date(gap_Winters)
 
 # View(gap_Winters)
@@ -2640,9 +2641,787 @@ ggplot(data = weather_Winters[4:260, ], aes(Date)) +
 # In this interpolation, some daytime or nighttime cycles were missed entirely, 
 # which can lead to substantial errors when calculating agroclimatic metrics, 
 # such as chill or heat stress, that are of particular concern during the 
-#warmest and coolest parts of the day.
+# warmest and coolest parts of the day.
 
 ```
+
+\n
+
+- `interpolate_gaps_hourly()` can produce credible and continuous hourly records from a patchy dataset. It can also derive daily temperature extremes from hourly data that were recorded. Rough mode of operation:
+    - Express temperatures for each hour as a function of daily temperature extremes using the functions of [Linvill (1990).](https://journals.ashs.org/hortsci/view/journals/hortsci/25/1/article-p14.xml) According to this idealized curve, all hourly temperatures can be expressed as a function of `Tmin` and `Tmax` on the previous, same or next day of the temperature record (depending on which hour is of interest). For a day with a complete record, 24 equations can be set up.
+    - For each daily temperature extreme, empirically solve the system of all equations that contain the respective `Tmin` or `Tmax` variable (this is only attempted, when a minimum of 5 equations are available, to avoid spurious results).
+    - Close gaps in the resulting dataset of daily Tmin and Tmax using data from proxy stations or, as a last resort, linear interpolation.
+    - Compute idealized temperature curves from the now continuous record of daily `Tmin` and `Tmax` values.
+    - Calculate the difference between recorded temperatures and this idealized curve.
+    - Linearly interpolate this difference and add then result to the idealized temperature curve.
+    
+\n
+
+```{r 11.4a, eval=FALSE}
+
+# See how this function works on the Winters dataset, using daily data from 
+# a nearby station of the California Irrigation Management Information System 
+# (CIMIS) as a proxy.  
+# Usually can't download coz of server fails to connect
+stations <- handle_cimis("list_stations", # handle_cimis is similar to handle_gsod
+                         location = c(-122,38.5))
+downloaded_winters <- handle_cimis("download_weather",
+                                   stations$chillR_code[2],
+                                   time_interval = c(2008,2008))
+winters_daily <- handle_cimis(downloaded_winters)$weather
+
+```
+
+
+- We will use a provided dataset instead. 
+
+```{r 11.4b}
+
+# So, we use a ready-made dataset
+winters_daily <- read.csv("data/OT/winters_daily.csv")
+
+# View the dataset
+kable(winters_daily[1:5,]) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+## Use interpolate_gaps_hourly() function to patch
+# Call dataset to patch
+to_interp <- Winters_hours_gaps
+
+# Add Temp data to new Temp_recorded column
+to_interp[, "Temp_recorded"] <- to_interp[, "Temp"]
+
+# Add Temp_gaps data to the Temp column
+to_interp[, "Temp"] <- to_interp[, "Temp_gaps"]
+
+# Generate continous hourly records
+interp <- interpolate_gaps_hourly(hourtemps = to_interp, 
+                                  latitude = 38.5,
+                                  daily_temps = list(Winters = winters_daily))
+# hourtemps: data.frame containing hourly temperatures. 
+  # This has to contain columns c("Year","Month","Day","Hour","Temp").
+# latitude: location of interest
+# daily_temps: list of (chillR compliant) daily temperature data sets 
+  # for patching gaps in the record.
+# Winters = : give name to the station, otherwise report as station_x in result
+
+```
+
+
+The resulting dataset has two elements: $weather and daily_patch_report. Let’s first look at the `daily_patch_report` element.
+
+- The resulting table of the `daily_patch_report` element contains information on 
+    - how many gaps in the daily record were filled by solving the system of hourly equations (‘solved’), 
+    - how many `Tmin` and `Tmax` values were derived from proxy stations (listed by name, if names were provided in the call to `interpolate_gaps_hourly`; otherwise as station_x), 
+    - how many were filled by linear interpolation (this option can be turned off using the `interpolate_remaining` parameter). 
+
+\n
+
+- For proxy stations, it also provides the bias in mean Tmin and Tmax, which has been corrected, as well as the bias in the standard deviation of Tmin and Tmax (which was not corrected).
+
+
+```{r 11.4c}
+kable(interp$daily_patch_report,
+      caption = "The element of `daily_patch_report`") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+The `$weather` element of the interpolation result contains the table of interpolated temperatures.
+
+```{r 11.4d}
+# Show only Day 6 of the dataset 
+kable(interp$weather[63:86, ],
+      caption = "The element of `weather`") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+``` 
+
+<br>
+
+Here I will try to plot the result like in the coursebook. 
+
+- This illustration shows that the `interpolate_gaps_hourly()` function produced a pretty good approximation (red lines) to the actual temperatures (gray line).
+
+```{r 11.4e}
+
+# Add date in chillR format
+interp_plot <- add_date(interp$weather)
+
+## Use codes from package example
+# Interpolated temperatures are shown in red, measured temperatures in black.
+# plot(interp_plot$Temp[45:320]~c(interp_plot$Date[45:320]),type="l",
+#   col="RED",lwd=2,xlab="Date",ylab="Temperature")
+# lines(interp_plot$Temp_measured[45:320]~c(interp_plot$Date[45:320]),lwd=2)
+
+# Create a subset of the data for the range between March 6-16
+interp_subset <- interp_plot[45:320, ]
+
+# Use ggplot 
+ggplot(interp_subset, aes(x = Date)) +
+  # Add the fist line for recorded temperatures as a gray line
+  geom_line(aes(y = Temp_recorded, color = "Temp Recorded"), size = 1.2) +
+  # Add the second line for interpolated temperatures as a red line
+  geom_line(aes(y = Temp, color = "Temp Interpolated"), size = 1.2) +
+  # Add the third line for measured temperatures as a black line (this is choppy)
+  geom_line(aes(y = Temp_measured, color = "Temp Measured"), size = 1.2) +
+
+  scale_color_manual(
+    values = c(
+      "Temp Interpolated" = "red",
+      "Temp Measured" = "black",
+      "Temp Recorded" = "grey"
+    ),
+    name = "Legend" 
+  ) +
+  
+  labs(x = "Date", y = "Temperature (°C)") 
+
+```
+
+<br>
+
+#### <span style="color:#71797E">11.4.1</span>&nbsp; Accuracy assessment
+
+<div style="height: 18px;"></div>
+
+- Since the actual hourly temperatures are known, the accuracy of the predictions produced by the various interpolation methods can be evaluated. 
+
+- A common measure for validating predictions is the Root Mean Square Error of the Prediction (RMSEP).
+
+<br>
+
+##### *Root Mean Square Error of the Prediction (RMSEP)* {.unnumbered}
+
+<div style="height: 18px;"></div>
+
+
+$$
+RMSEP = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+$$
+
+, with $\hat{y}_i$ being the observed values, $y_i$ the predicted values, and $n$ the number of values.
+
+- The RMSEP provides an indication of how far each predicted value deviates, on average, from the actual values.
+
+- It is, however, quite difficult to interpret RMSEP values alone, because whether they indicate a good or poor model fit depends on how variable the actual values are.
+    - For instance, an RMSEP of 5 days for a phenology model (which is close to, but not quite the same as a mean error of 5 days), could indicate a very good model, if observed dates vary by several weeks or months (e.g. for bloom dates of deciduous trees), but a terrible model, if the phenological stage of interest occurs on the same day every year (e.g. the ‘phenological’ event of candles lighting up on ‘festive indoor conifers’).
+    
+\n
+
+- This is why it makes sense to include in such accuracy assessment the variation in observed values. 
+
+- This can be achieved by dividing the standard deviation of the observed data by the RMSEP to calculate the Residual Prediction Deviation (RPD).
+
+<br>
+
+##### *Residual Prediction Deviation (RPD)* {.unnumbered}
+
+<div style="height: 18px;"></div>
+
+$$
+RPD = \frac{sd_y}{RMSEP}
+$$
+\n
+
+- This equation contains the RMSEP as computed above as well as the standard deviation of the observed values from their mean, defined as:
+
+$$
+sd_y = \sqrt{\frac{\sum_{i=1}^n (y_i - \bar{y})^2}{n-1}}
+$$
+
+, with $\bar{y}$ being the mean over all observations.
+
+- The RPD is more useful than the RMSEP, but its use of the standard deviation can be a problem, when actual values of $y$ aren’t normally distributed (then the standard deviation can be a poor measure of variation).
+
+- A more robust approach is use the interquartile range instead of the standard deviation. This metric is called the Ratio of Performance to InterQuartile distance (RPIQ).
+
+<br>
+
+##### *Ratio of Performance to InterQuartile distance (RPIQ)* {.unnumbered}
+
+<div style="height: 18px;"></div>
+
+$$
+RPIQ = \frac{IQ}{RMSEP}
+$$
+
+\n
+
+- IQ is calculated by subtracting the 75^th^ percentile of the distribution of all $y$ from the 25^th^ percentile.
+
+```{r 11.4.1a}
+
+# require(stats)
+y <- rnorm(100)
+IQ <- quantile(y)[4] - quantile(y)[2]
+IQ
+
+```
+
+<br>
+
+- The RPIQ score is a bit harder to evaluate than the RMSEP, with different quality thresholds in use and a very high context dependency.
+
+- Quite commonly, values above 2 are considered ‘good’ or even ‘excellent’, though some studies use substantially higher thresholds (up to 8 for excellence).
+
+- Since the RPIQ makes no assumption about the distribution of $y$, let’s use this for assessing the accuracy of the various interpolation methods. We have a total of four methods to evaluate:
+    - **idealized** temperature curves from **daily** records of `Tmin` and `Tmax`, based on records from a **nearby weather station**
+    - **idealized** temperature curves from **daily** records of `Tmin` and `Tmax`, based on records from **the same location**
+    - **linear** interpolation of **hourly** temperatures
+    - interpolation of **hourly** temperatures with `interpolate_gaps_hourly`
+
+\n
+
+- Use the `make_all_day_table()` function to generate a dataset of daily minimum and maximum temperatures from the hourly records for option 2. 
+
+```{r 11.4.1b}
+
+# Call dataset
+inter <- interp$weather
+
+# Add date column in chillR format
+inter[, "DATE"] <- ISOdate(inter$Year,
+                           inter$Month,
+                           inter$Day,
+                           inter$Hour)
+
+# Aggregate hourly records to daily Tmin, Tmean and Tmax 
+orchard_extremes <- make_all_day_table(inter,
+                                       timestep = "day",
+                                       input_timestep = "hour")
+kable(orchard_extremes[1:10, ]) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+- Let’s first look at the performance of the four methods for the periods that were missing in the hourly temperature record:
+
+```{r 11.4.1c}
+
+# Interpolate gaps in daily records and generate hourly temperatures
+winters_hours <- stack_hourly_temps(fix_weather(winters_daily),
+                                    latitude = 38)$hourtemps
+
+# Identify the date in winters_hours correspond to the first date of 
+# missing period in inter dataset? 
+# The output is 1499- row in the dataset???
+start_hour_winters <- which(winters_hours$Year == head(inter$Year,1)&
+                              winters_hours$Month == head(inter$Month,1)&
+                              winters_hours$Day == head(inter$Day,1)&
+                              winters_hours$Hour == head(inter$Hour,1))
+
+# Identify the date in winters_hours correspond to the end date of 
+# missing period in inter dataset? 
+# The output is 7572- row in the dataset???
+end_hour_winters <- which(winters_hours$Year == tail(inter$Year,1)&
+                            winters_hours$Month == tail(inter$Month,1)&
+                            winters_hours$Day == tail(inter$Day,1)&
+                            winters_hours$Hour == tail(inter$Hour,1))
+
+# Follow same process for orchard dataset?
+orchard_hours <- stack_hourly_temps(orchard_extremes,
+                                    latitude = 38)$hourtemps
+
+start_hour_orchard <- which(orchard_hours$Year == head(inter$Year,1)&
+                              orchard_hours$Month == head(inter$Month,1)&
+                              orchard_hours$Day == head(inter$Day,1)&
+                              orchard_hours$Hour == head(inter$Hour,1))
+
+end_hour_orchard <- which(orchard_hours$Year == tail(inter$Year,1)&
+                            orchard_hours$Month == tail(inter$Month,1)&
+                            orchard_hours$Day == tail(inter$Day,1)&
+                            orchard_hours$Hour == tail(inter$Hour,1))
+
+## Extract data for each option
+# Actual temp?
+observed <- inter$Temp_recorded
+
+# Use proxy data "winters"
+option1 <- winters_hours$Temp[start_hour_winters:end_hour_winters]
+
+# Use orchard_extremes data (same location)
+option2 <- orchard_hours$Temp[start_hour_orchard:end_hour_orchard]
+
+# Use liner interpolation
+option3 <- interpolate_gaps(inter$Temp_gaps)$interp
+
+# Use interpolate_gap_hourly() function
+option4 <- inter$Temp
+
+# Create a data.frame for output, under two names of dataset
+eval_table <- # This line might not be needed as eval_table is set again below?
+  eval_table_gaps <-
+  data.frame(Option = 1:4,
+             Input_data = c("daily","daily","hourly","hourly"),
+             Interpolation_method = c("from proxy","local extremes",
+                                      "linear","hourly interpolation"),
+             RMSEP = NA,
+             RPIQ = NA)
+
+# Extract the values in each option that correspond with the missing gaps
+observed_gaps <- observed[which(is.na(inter$Temp_gaps))]
+option1_gaps <- option1[which(is.na(inter$Temp_gaps))]
+option2_gaps <- option2[which(is.na(inter$Temp_gaps))]
+option3_gaps <- option3[which(is.na(inter$Temp_gaps))]
+option4_gaps <- option4[which(is.na(inter$Temp_gaps))]
+
+# Add result for RMSEP in the output table created above
+# Comparison between data from each option and the recorded data
+eval_table_gaps[,"RMSEP"] <- round(c(RMSEP(option1_gaps, observed_gaps),
+                                     RMSEP(option2_gaps, observed_gaps),
+                                     RMSEP(option3_gaps, observed_gaps),
+                                     RMSEP(option4_gaps, observed_gaps)),
+                                   1) # round to 1 decimal point
+
+# Add result for RPIQ in the output table created above
+eval_table_gaps[,"RPIQ"] <- round(c(RPIQ(option1_gaps, observed_gaps),
+                                    RPIQ(option2_gaps, observed_gaps),
+                                    RPIQ(option3_gaps, observed_gaps),
+                                    RPIQ(option4_gaps, observed_gaps)),
+                                  1) # round to 1 decimal point
+
+# Display the output table
+kable(eval_table_gaps) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# This table shows that the interpolate_gaps_hourly function produced the 
+# best results, with an RMSEP of 2 and an RPIQ of 5.4.
+
+# Option 3, where hourly records collected in the orchard were interpolated 
+# linearly, produced the worst fit. 
+
+# This highlights that, at least in this case, using an idealized temperature 
+# curve to close gaps in daily temperatures from the orchard (option 2) 
+# and even from the proxy station (option 1) produced more accurate results.
+
+# The quality of option 1 will depend on the similarity between weather at the 
+# proxy station and in the orchard (in this case, this should be quite similar).
+
+```
+
+
+- Restricting the comparison to only the gaps in the record is a bit unfair, because of course records produced by option 3 (linear interpolation of hourly records from the orchard) are completely accurate for hours, when temperatures were recorded.
+
+- So let’s also compare the relative performance of the four methods across all hours of the record.
+
+```{r 11.4.1d}
+
+# Create data.frame for output table again
+eval_table <-
+  data.frame(Option = 1:4,
+             Input_data = c("daily","daily","hourly","hourly"),
+             Interpolation_method = c("from proxy","local extremes",
+                                      "linear","hourly interpolation"),
+             RMSEP = NA,
+             RPIQ = NA)
+
+## Comparison between whole datasets- not just the gaps
+# Add values for RMSEP 
+eval_table[,"RMSEP"] <- round(c(RMSEP(option1, observed),
+                                RMSEP(option2, observed),
+                                RMSEP(option3, observed),
+                                RMSEP(option4, observed)),
+                              1)
+
+# Add values for RPIQ
+eval_table[,"RPIQ"] <- round(c(RPIQ(option1, observed),
+                               RPIQ(option2, observed),
+                               RPIQ(option3, observed),
+                               RPIQ(option4, observed)),
+                             1)
+
+
+# Display output
+kable(eval_table) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# The quality of the proxy-based idealized temperature curves went down 
+# slightly, while all other approaches saw improvements in quality 
+# (lower RMSEP and higher RPIQ).
+
+# The RPIQ values for the two interpolations that were based on local data 
+# (options 2 and 4) are very high, especially for option 4, which used the 
+# interpolate_gaps_hourly function.
+
+# The RPIQ score for option 4 almost exceeds the ‘excellence’ threshold for 
+# the most conservative RPIQ evaluation scheme (threshold of 8). This is quite 
+# remarkable, given the variable nature of daily temperature fluctuations and 
+# the fact that about half of the actually recorded values were removed before 
+# running the interpolation.
+
+```
+
+
+- ***In conclusion, the `interpolate_gaps_hourly` function provided a very good approximation of hourly temperatures for times when no values were recorded.***
+
+<br>
+
+#### <span style="color:#71797E">11.4.2</span>&nbsp; Computing agroclimatic metrics
+
+<div style="height: 18px;"></div>
+
+- Finally, let’s look at the implication of the choice of interpolation method on chill and heat estimates.
+
+- If we’re interested in using the Dynamic Model for winter chill or the Growing Degree Hours model for heat, we can simply calculate this using the `Dynamic_Model` and `GDH()` functions in `chillR`.
+
+- For more functionality, see the `chilling()` and particularly the `tempResponse()` functions.
+
+- First, look at the implications of method choice on chill accumulation:
+
+```{r 11.4.2a}
+
+# Recall the dataset (just to make sure good knitting)
+observed <- inter$Temp_recorded
+option1 <- winters_hours$Temp[start_hour_winters:end_hour_winters]
+option2 <- orchard_hours$Temp[start_hour_orchard:end_hour_orchard]
+option3 <- interpolate_gaps(inter$Temp_gaps)$interp
+option4 <- inter$Temp
+
+# Create a data.frame with results for each option
+all_chill <- data.frame(DATE = inter$DATE,
+                        "Obs" = Dynamic_Model(observed),
+                        "Opt1" = Dynamic_Model(option1),
+                        "Opt2" = Dynamic_Model(option2),
+                        "Opt3" = Dynamic_Model(option3),
+                        "Opt4" = Dynamic_Model(option4))
+
+# Collapse columns into rows
+all_chill <- pivot_longer(all_chill, Obs:Opt4)
+
+# Add a method column with legend names for each option
+all_chill[which(all_chill$name == "Obs"),"Method"] <-
+  "Observed temperatures"
+all_chill[which(all_chill$name == "Opt1"),"Method"] <-
+  "Option 1 - idealized record from proxy data"
+all_chill[which(all_chill$name == "Opt2"),"Method"] <-
+  "Option 2 - idealized record from daily orchard data"
+all_chill[which(all_chill$name == "Opt3"),"Method"] <-
+  "Option 3 - linear interpolation of hourly data"
+all_chill[which(all_chill$name == "Opt4"),"Method"] <-
+  "Option 4 - use of interpolate_gaps_hourly"
+
+# Plot the data
+ggplot(all_chill, aes(x = DATE, y = value, colour = Method)) +
+  geom_line(size = 1.2) +
+  labs(x = "Date", y = "Chill accumulation (Chill Portions)") +
+theme(
+  legend.position = c(0.4, 0.85), 
+  legend.background = element_rect(fill = "white", size = 0.2),
+  legend.text = element_text(size = 12),
+  legend.title = element_text(size = 14),
+  legend.key.size = unit(1.2, "lines")
+)
+
+## I found another way to plot.
+## This is quite a roundabout but I will just save it here anyway.
+
+# Create a data.frame with results for each option
+# all_chill <- data.frame(DATE = inter$DATE,
+#                         "Obs" = Dynamic_Model(observed),
+#                         "Opt1" = Dynamic_Model(option1),
+#                         "Opt2" = Dynamic_Model(option2),
+#                         "Opt3" = Dynamic_Model(option3),
+#                         "Opt4" = Dynamic_Model(option4))
+# 
+# The latter is not necessary but I just found out how to change names of column 
+# all_chill_long <- pivot_longer(all_chill, cols = Obs:Opt4, names_to = 
+#                                  "Method", values_to = "Chill_Portion")
+
+# Fill missing values for each method (ggplot gives blank plot with NA values)
+# When I first run the coursebook codes, there were NA values and I couldn't plot
+# After I filled the missing values using tidyr, I tried running the original
+# codes again and there were no NA. Don't know why but maybe this filling step
+# is not necessary. 
+# all_chill_long <- all_chill_long %>%
+#   group_by(Method) %>% # group_by to fill values separately for each method
+  # fill values in Chill_Portion using downup direction
+  # for values missing above and below within a group
+  # tidyr::fill(Chill_Portion, .direction = "downup") %>%
+  # ungroup() # ungroup to return data to original data.frame
+
+# Plot the results
+# ggplot(all_chill_long, aes(x = DATE, y = Chill_Portion, colour = Method)) +
+#   geom_line(size = 1.2) +
+#   labs(x = "Date", y = "Chill accumulation (Chill Portions)") +
+# 
+#   scale_color_discrete(name = "Method", labels = 
+#                            c("Observed temperatures",
+#                              "Option 1 - idealized record from proxy data", 
+#                              "Option 2 - idealized record from daily orchard data",
+#                              "Option 3 - linear interpolation of hourly data",
+#                              "Option 4 - use of interpolate_gaps_hourly")) +
+#   theme(
+#     legend.position = c(0.25, 0.85), 
+#     legend.background = element_rect(fill = "white", size = 0.2),
+#     legend.text = element_text(size = 18),
+#     legend.title = element_text(size = 20),
+#     legend.key.size = unit(1.2, "lines")
+#   )
+
+```
+
+- This figure shows that chill accumulation differed substantially between the options. Both the use of proxy data and the use of linear interpolation of hourly temperatures led to considerable overestimation of chill accumulation.
+
+- Do the same assessment for heat:
+
+```{r 11.4.2b}
+
+all_heat <- data.frame(DATE = inter$DATE,
+                       "Obs" = GDH(observed),
+                       "Opt1" = GDH(option1),
+                       "Opt2" = GDH(option2),
+                       "Opt3" = GDH(option3),
+                       "Opt4" = GDH(option4))
+
+all_heat <- pivot_longer(all_heat, Obs:Opt4)
+
+all_heat[which(all_heat$name == "Obs"),"Method"] <-
+  "Observed temperatures"
+all_heat[which(all_heat$name == "Opt1"),"Method"] <-
+  "Option 1 - idealized record from proxy data"
+all_heat[which(all_heat$name == "Opt2"),"Method"] <-
+  "Option 2 - idealized record from daily orchard data"
+all_heat[which(all_heat$name == "Opt3"),"Method"] <-
+  "Option 3 - linear interpolation of hourly data"
+all_heat[which(all_heat$name == "Opt4"),"Method"] <-
+  "Option 4 - use of interpolate_gaps_hourly"
+
+# Plot the data
+ggplot(all_heat, aes(x = DATE, y = value, colour = Method)) +
+  geom_line(size = 1.2) +
+  labs(x = "Date", y = "Heat accumulation (Growing Degree Hours)") +
+theme(
+  legend.position = c(0.4, 0.85), 
+  legend.background = element_rect(fill = "white", size = 0.2),
+  legend.text = element_text(size = 12),
+  legend.title = element_text(size = 14),
+  legend.key.size = unit(1.2, "lines")
+)
+
+
+
+```
+
+<br>
+
+- This comparison doesn’t look quite as bad as for chill accumulation, but also here, option 4 clearly provided the most accurate estimate (it almost coincides with the red line, making the difference hard to see).
+
+- This dataset didn’t cover the winter season, so the chill numbers aren’t too meaningful, but it is nevertheless instructive to compare the total accumulation of chill and heat over the whole temperature record:
+
+```{r 11.4.2c}
+
+CH_table <-
+  data.frame(Option = 0:4,
+             Input_data = c("observed","daily","daily","hourly", "hourly"),
+             Interpolation_method = c("none", "from proxy","local extremes",
+                                      "linear","hourly interpolation"),
+             Chill_Portions = NA,
+             Growing_Degree_Hours= NA)
+
+CH_table$Chill_Portions <- (all_chill %>% 
+                          group_by(name) %>%
+                         summarise(total_value = sum(value, na.rm = TRUE)) %>%
+                         ungroup())$ total_value
+                              
+
+
+CH_table$Growing_Degree_Hours <- (all_heat %>% 
+                          group_by(name) %>%
+                         summarise(total_value = sum(value, na.rm = TRUE)) %>%
+                         ungroup())$ total_value
+
+
+kable(CH_table) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+
+```
+
+<br>
+
+- This comparison shows that the choice of interpolation method can have substantial impact on our impression of accumulated chill and heat. 
+
+- The `interpolate_gaps_hourly()` function in `chillR` outperformed all other methods evaluated here.
+
+<br>
+
+### <span style="color:#71797E">11.5</span>&nbsp; Exercises on filling gaps
+
+<div style="height: 18px;"></div>
+
+*You already downloaded some weather data in the exercises for the Getting temperatures lesson. You can keep working with this.*
+
+***1. Use `chillR` functions to find out how many gaps you have in this dataset (even if you have none, please still follow all further steps)*** 
+
+There are large gaps in the dataset, particularly missing data for whole years between 1992 to 2002. 
+
+```{r 11.5.1}
+
+MS_weather <- read.csv("data/MS/STG_chillR_weather.csv")
+
+MS_weather_gap_check <- fix_weather(MS_weather)$QC
+
+kable(MS_weather_gap_check) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+
+```
+
+<br>
+
+***2. Create a list of the 25 closest weather stations using the `handle_gsod` function***
+
+List of stations from GSOD database:
+
+```{r 11.5.2}
+
+# Look for stations near M&ouml;ssigen (48.40567° N, 9.05419° E)
+MS_station_list <- handle_gsod(action = "list_stations",
+                               location = c(long = 9.05, lat = 48.40),
+                               time_interval = c(1990, 2020))
+
+
+kable(MS_station_list, 
+      caption = "The 25 closet weather stations to Mössigen") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+I tried to patch data with stations from GSOD database, using the `handle_gsod()` function, but I could not patch the data. I think it could be problems with distance and the few overlap years&mdash; it didn't work even when I used all stations in the list. 
+
+So, I looked around a bit and found `handle_dwd()` function, which draws data from the Deutscher Wetterdienst database. Since my location is in Germany, I decided to try it and it worked well. 
+
+Here is the list of 25 closest stations using `handle_dwd()`
+
+```{r 11.5.2a}
+
+MS_station_list_dwd<-handle_dwd(action="list_stations",
+                                location=c(9.05, 48.40),
+                             time_interval=c(19900101,20201231))
+
+kable(MS_station_list_dwd) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+```
+
+
+<br>
+
+***3. Identify suitable weather stations for patching gaps***
+
+I chose the suitable weather stations based on the distance and start/end years. Here are the list of stations I chose for patching weather data:
+
+```{r 11.5.3}
+
+kable(MS_station_list_dwd[c(1, 2, 4, 7),],
+  caption = "List of suitable weather stations for patching weather data") %>%
+  kable_styling("striped", position = "left", font_size = 5)
+
+
+
+```
+
+
+<br>
+
+***4. Download weather data for promising stations, convert them to `chillR` format and compile them in a list***
+
+Unlike the `handle_gsod()` function, there is no need to convert to `chillR` format with an additional line of code with the `handle_dwd()` function, as seen in the table below. 
+
+```{r 11.5.3a}
+
+# Download weather data for promising stations
+MS_patch_weather <- handle_dwd(action = "download_weather",
+                            location = MS_station_list_dwd$Station_ID[c(2,4,7,1)])
+
+kable(MS_patch_weather[[4]] [1:10, ]) %>%
+    kable_styling("striped", position = "left", font_size = 5)
+```
+
+
+<br>
+
+***5. Use the `patch_daily_temperatures` function to fill gaps***
+
+```{r 11.5.5}
+
+MS_weather <- read.csv("data/MS/STG_chillR_weather.csv")
+
+MS_patched <- patch_daily_temperatures(weather = MS_weather,
+                                    patch_weather = MS_patch_weather,
+                                    max_mean_bias = 1,
+                                    max_stdev_bias = 2)
+
+# Combine list elements into a data.frame to display patched statistics
+patched_stats <- do.call(rbind, MS_patched$statistics)  
+
+write.csv(patched_stats, "data/MS/patched_stats.csv")
+
+MS_patched_stats <- read.csv("data/MS/patched_stats.csv")
+
+kable(MS_patched_stats, caption = "Patched Statistics for Mössigen") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Save for later use
+write.csv(MS_patched$weather, "data/MS/MS_patched_weather.csv")
+
+
+```
+
+
+
+<br>
+
+***6. Investigate the results&mdash; have all gaps been filled?***
+
+All gaps have been filled as shown in the table. 
+
+```{r 11.5.6}
+
+MS_QC <- fix_weather(MS_patched)$QC
+
+write.csv(MS_QC,"data/MS/MS_QC.csv")
+
+MS_patched_QC <- read.csv("data/MS/MS_QC.csv")
+
+kable(MS_patched_QC,
+      caption = "Check gaps on patched weather dataset for Mössigen") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+
+```
+
+
+<br>
+
+***7. If necessary, repeat until you have a dataset you can work with in further analyses***
+
+I did repeat the process till I got the most suitable stations (in my opinion). The `handle_dwd()` ran faster than the `handle_gsod()`, so I could download all 25 stations within a few seconds. I downloaded all and check the statistics afterwards to see which stations filled the gaps. I initially chose the stations based on distance and overlap years, but then, I thought why not try all and see how it went?
+
+This is what I found:
+
+- The order to download the stations matters.
+
+- At first, I found station 1 is the best choice&mdash; closest in distance and it filled all the gaps if I didn't set threshold for `max_mean_bias` and `max_stdev_bias`. So, only one station would have been needed to patch all the gaps if I didn't mind `max_mean_bias` values of a few decimal points above 1. (Why one though?) 
+
+- When I set those bias values, the station 1 could fill all gaps for `Tmin` but fill none for `Tmax`. Since it filled all gaps in `Tmin`, I think the program assumed that all gaps were filled (maybe the program consider `Tmin` and `Tmax` together?) and it would give `NA` values for all remaining stations I downloaded. 
+      
+- Since I want the dataset to be patched with values below the bias thresholds, I downloaded the station 1 last (`MS_station_list_dwd$Station_ID[c(2,4,7,1)]`), and it worked perfectly! 
+
+<br>
+
+
+
+
+
+
+
 
 
 
