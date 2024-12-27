@@ -5,7 +5,7 @@
 <meta name="generator" content="quarto-1.5.57">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="SM">
-<meta name="dcterms.date" content="2024-12-26">
+<meta name="dcterms.date" content="2024-12-27">
 <title>Tree Phenology Analysis with R</title>
 <style>
 code{white-space: pre-wrap;}
@@ -287,6 +287,13 @@ window.Quarto = {
   <li><a href="#exercises-on-filling-gaps" id="toc-exercises-on-filling-gaps" class="nav-link" data-scroll-target="#exercises-on-filling-gaps"><span style="color:#71797E">11.5</span>&nbsp; Exercises on filling gaps</a></li>
   </ul>
 </li>
+  <li>
+<a href="#chapter-12-generating-temperature-scenarios" id="toc-chapter-12-generating-temperature-scenarios" class="nav-link" data-scroll-target="#chapter-12-generating-temperature-scenarios">Chapter 12: Generating temperature scenarios</a>
+  <ul>
+<li><a href="#chill-scenarios" id="toc-chill-scenarios" class="nav-link" data-scroll-target="#chill-scenarios"><span style="color:#71797E">12.1</span>&nbsp; Chill scenarios</a></li>
+  <li><a href="#risk-assessment-in-orchard-planning" id="toc-risk-assessment-in-orchard-planning" class="nav-link" data-scroll-target="#risk-assessment-in-orchard-planning"><span style="color:#71797E">12.2</span>&nbsp; Risk assessment in orchard planning</a></li>
+  </ul>
+</li>
   </ul></nav>
 </div>
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
@@ -310,7 +317,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 26, 2024</p>
+      <p class="date">December 27, 2024</p>
     </div>
   </div>
   
@@ -1399,7 +1406,7 @@ window.Quarto = {
         return(cumsum(CH_weights))
     else return(CH_weights)
 }
-&lt;bytecode: 0x124b6e338&gt;
+&lt;bytecode: 0x12c9b4780&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb41"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># Apply Chilling_Hours() function to Winters_hours_gap dataset</span></span>
@@ -1428,7 +1435,7 @@ return(step_model(HourTemp, df = data.frame(lower = c(-1000,
     1.4, 2.4, 9.1, 12.4, 15.9, 18), upper = c(1.4, 2.4, 9.1, 
     12.4, 15.9, 18, 1000), weight = c(0, 0.5, 1, 0.5, 0, -0.5, 
     -1)), summ = summ))
-&lt;bytecode: 0x1246a7e60&gt;
+&lt;bytecode: 0x11c548278&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb45"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu">Utah_Model</span><span class="op">(</span><span class="va">Winters_hours_gaps</span><span class="op">$</span><span class="va">Temp</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1542,7 +1549,7 @@ return(step_model(HourTemp, df = data.frame(lower = c(-1000,
         return(cumsum(delta))
     return(delta)
 }
-&lt;bytecode: 0x117a35540&gt;
+&lt;bytecode: 0x11b4962b0&gt;
 &lt;environment: namespace:chillR&gt;</code></pre>
 </div>
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb52"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu">Dynamic_Model</span><span class="op">(</span><span class="va">Winters_hours_gaps</span><span class="op">$</span><span class="va">Temp</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -8813,32 +8820,32 @@ intervals. Consider changing the time interval.</code></pre>
 <tr class="odd">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Year</td>
-<td style="text-align: right;">0.9975548</td>
+<td style="text-align: right;">0.9933349</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Month</td>
-<td style="text-align: right;">0.9875781</td>
+<td style="text-align: right;">0.9873087</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Tmin</td>
 <td style="text-align: left;">Two weeks</td>
-<td style="text-align: right;">0.9877060</td>
+<td style="text-align: right;">0.9883714</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Year</td>
-<td style="text-align: right;">0.8285869</td>
+<td style="text-align: right;">0.8479202</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Month</td>
-<td style="text-align: right;">0.8138081</td>
+<td style="text-align: right;">0.8253971</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Tmax</td>
 <td style="text-align: left;">Two weeks</td>
-<td style="text-align: right;">0.8132357</td>
+<td style="text-align: right;">0.8252075</td>
 </tr>
 </tbody>
 </table>
@@ -9583,7 +9590,7 @@ RPIQ = \frac{IQ}{RMSEP}
 <span><span class="va">IQ</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details><div class="cell-output cell-output-stdout">
 <pre><code>     75% 
-1.321334 </code></pre>
+1.432822 </code></pre>
 </div>
 </div>
 <p><br></p>
@@ -10275,7 +10282,7 @@ RPIQ = \frac{IQ}{RMSEP}
 </div>
 <p><em>You already downloaded some weather data in the exercises for the Getting temperatures lesson. You can keep working with this.</em></p>
 <p><strong><em>1. Use <code>chillR</code> functions to find out how many gaps you have in this dataset (even if you have none, please still follow all further steps)</em></strong></p>
-<p>There are large gaps in the dataset, particularly missing data for whole years between 1992 to 2002.</p>
+<p>There are large gaps in the dataset, particularly missing data for whole years between 1992 and 2002.</p>
 <div class="cell">
 <details class="code-fold"><summary>Show code</summary><div class="sourceCode" id="cb203"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">MS_weather</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html">read.csv</a></span><span class="op">(</span><span class="st">"data/MS/STG_chillR_weather.csv"</span><span class="op">)</span></span>
 <span></span>
@@ -12039,9 +12046,39 @@ RPIQ = \frac{IQ}{RMSEP}
 <li><p>When I set those bias values, the station 1 could fill all gaps for <code>Tmin</code> but fill none for <code>Tmax</code>. Since it filled all gaps in <code>Tmin</code>, I think the program assumed that all gaps were filled (maybe the program consider <code>Tmin</code> and <code>Tmax</code> together?) and it would give <code>NA</code> values for all remaining stations I downloaded.</p></li>
 <li><p>Since I want the dataset to be patched with values below the bias thresholds, I downloaded the station 1 last (<code>MS_station_list_dwd$Station_ID[c(2,4,7,1)]</code>), and it worked perfectly!</p></li>
 </ul>
+<p>Another thing I want to add here is I selected the best station from the list generated from the GSOD database, and patched that station with data from DWD database. Practically, I should have chosen the station 1 from the DWD list— I wouldn’t have any gaps and it would have been a better choice in terms of data quality. But, for the sake of doing the following exercises, I must either create gaps or use the station I chose from GSOD database. I chose the latter option because there might be times I could not go back to the past and redo everything— I guess it is a better practice to adapt and keep going.</p>
 <p><br></p>
-<!-- -->
+</section></section><section id="chapter-12-generating-temperature-scenarios" class="level2"><h2 class="anchored" data-anchor-id="chapter-12-generating-temperature-scenarios">Chapter 12: Generating temperature scenarios</h2>
+<section id="chill-scenarios" class="level3"><h3 class="anchored" data-anchor-id="chill-scenarios">
+<span style="color:#71797E">12.1</span>&nbsp; Chill scenarios</h3>
+<div style="height: 18px;">
 
+</div>
+<ul>
+<li><p>Information on chill availability (or other agroclimatic conditions) at a given site is crucial for orchard managers selecting tree species and cultivars for their orchards.</p></li>
+<li><p>Looking at the historic record has already given us a lot of useful information, but this isn’t yet exactly the information that a grower making planting decisions needs.</p></li>
+<li><p>What is really needed is a site-specific agroclimatic characterization that provides an impression of the range of conditions that we can reasonably expect at this location, i.e.&nbsp;how likely it is for the orchard to experience certain levels of chill, heat or whatever other metric we are interested in.</p></li>
+</ul>
+<p><br></p>
+</section><section id="risk-assessment-in-orchard-planning" class="level3"><h3 class="anchored" data-anchor-id="risk-assessment-in-orchard-planning">
+<span style="color:#71797E">12.2</span>&nbsp; Risk assessment in orchard planning</h3>
+<div style="height: 18px;">
+
+</div>
+<ul>
+<li><p>Since trees live and are (hopefully) productive for many years, they experience many different temperature dynamics during their productive lifetime.</p></li>
+<li><p>For optimal production, trees should fulfill their climatic needs in all of these years.</p></li>
+<li><p>This is why, when we select trees for planting, we need information on the plausible range of ‘weathers’ we can expect.</p></li>
+<li><p>Based on this, we would be able to select trees that safely fulfill their chilling requirements in all plausible weather situations, or we could choose trees that strike a balance between early flowering and the risk of spring frost.</p></li>
+<li><p>All such decisions require information on how likely it is for our orchard to experience certain conditions.</p></li>
+<li><p>The plausible range of ‘weathers’ we can expect is defined by the local climate, which is the long-term average of the annually observed weather.</p></li>
+<li><p>We can interpret this ‘climate’ as a virtual collection of all possible weather situations for a given location, from which we receive one random draw each year.</p></li>
+<li><p>Annual weather can be interpreted as a random draw from the plausible distribution of all possible ‘weathers’.</p></li>
+<li><p>For planning purposes, it would be much more useful to know this virtual distribution of possible ‘weathers’ than just looking at the random samples that happened to be drawn.</p></li>
+<li><p>So far, we’ve only been able to get these samples - that was the historic analysis of observed chill.</p></li>
+<li><p>We’ll try to get to the actual climate, and from there to ways to use this knowledge for producing temperature profiles for locations of interest that facilitate orchard planning.</p></li>
+</ul>
+<!-- -->
 </section></section></main><!-- /main column --><script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
@@ -15773,7 +15810,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb211-3258"><a href="#cb211-3258" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb211-3259"><a href="#cb211-3259" aria-hidden="true" tabindex="-1"></a>***1. Use `chillR` functions to find out how many gaps you have in this dataset (even if you have none, please still follow all further steps)*** </span>
 <span id="cb211-3260"><a href="#cb211-3260" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3261"><a href="#cb211-3261" aria-hidden="true" tabindex="-1"></a>There are large gaps in the dataset, particularly missing data for whole years between 1992 to 2002. </span>
+<span id="cb211-3261"><a href="#cb211-3261" aria-hidden="true" tabindex="-1"></a>There are large gaps in the dataset, particularly missing data for whole years between 1992 and 2002. </span>
 <span id="cb211-3262"><a href="#cb211-3262" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb211-3263"><a href="#cb211-3263" aria-hidden="true" tabindex="-1"></a><span class="in">```{r 11.5.1}</span></span>
 <span id="cb211-3264"><a href="#cb211-3264" aria-hidden="true" tabindex="-1"></a></span>
@@ -15929,48 +15966,89 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb211-3414"><a href="#cb211-3414" aria-hidden="true" tabindex="-1"></a>      </span>
 <span id="cb211-3415"><a href="#cb211-3415" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Since I want the dataset to be patched with values below the bias thresholds, I downloaded the station 1 last (<span class="in">`MS_station_list_dwd$Station_ID[c(2,4,7,1)]`</span>), and it worked perfectly! </span>
 <span id="cb211-3416"><a href="#cb211-3416" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3417"><a href="#cb211-3417" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
+<span id="cb211-3417"><a href="#cb211-3417" aria-hidden="true" tabindex="-1"></a>Another thing I want to add here is I selected the best station from the list generated from the GSOD database, and patched that station with data from DWD database. Practically, I should have chosen the station 1 from the DWD list<span class="dv">&amp;mdash;</span> I wouldn't have any gaps and it would have been a better choice in terms of data quality. But, for the sake of doing the following exercises, I must either create gaps or use the station I chose from GSOD database. I chose the latter option because there might be times I could not go back to the past and redo everything<span class="dv">&amp;mdash;</span> I guess it is a better practice to adapt and keep going.</span>
 <span id="cb211-3418"><a href="#cb211-3418" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3419"><a href="#cb211-3419" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3419"><a href="#cb211-3419" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb211-3420"><a href="#cb211-3420" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3421"><a href="#cb211-3421" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3421"><a href="#cb211-3421" aria-hidden="true" tabindex="-1"></a><span class="fu">## Chapter 12: Generating temperature scenarios</span></span>
 <span id="cb211-3422"><a href="#cb211-3422" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3423"><a href="#cb211-3423" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3423"><a href="#cb211-3423" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;12.1&lt;/span&gt;&amp;nbsp; Chill scenarios</span></span>
 <span id="cb211-3424"><a href="#cb211-3424" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3425"><a href="#cb211-3425" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3425"><a href="#cb211-3425" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
 <span id="cb211-3426"><a href="#cb211-3426" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3427"><a href="#cb211-3427" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3427"><a href="#cb211-3427" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Information on chill availability (or other agroclimatic conditions) at a given site is crucial for orchard managers selecting tree species and cultivars for their orchards.</span>
 <span id="cb211-3428"><a href="#cb211-3428" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3429"><a href="#cb211-3429" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3429"><a href="#cb211-3429" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Looking at the historic record has already given us a lot of useful information, but this isn’t yet exactly the information that a grower making planting decisions needs. </span>
 <span id="cb211-3430"><a href="#cb211-3430" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3431"><a href="#cb211-3431" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3431"><a href="#cb211-3431" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>What is really needed is a site-specific agroclimatic characterization that provides an impression of the range of conditions that we can reasonably expect at this location, i.e. how likely it is for the orchard to experience certain levels of chill, heat or whatever other metric we are interested in.</span>
 <span id="cb211-3432"><a href="#cb211-3432" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3433"><a href="#cb211-3433" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3433"><a href="#cb211-3433" aria-hidden="true" tabindex="-1"></a>&lt;br&gt;</span>
 <span id="cb211-3434"><a href="#cb211-3434" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3435"><a href="#cb211-3435" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3436"><a href="#cb211-3436" aria-hidden="true" tabindex="-1"></a><span class="in">        </span></span>
-<span id="cb211-3437"><a href="#cb211-3437" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3435"><a href="#cb211-3435" aria-hidden="true" tabindex="-1"></a><span class="fu">### &lt;span style="color:#71797E"&gt;12.2&lt;/span&gt;&amp;nbsp; Risk assessment in orchard planning</span></span>
+<span id="cb211-3436"><a href="#cb211-3436" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3437"><a href="#cb211-3437" aria-hidden="true" tabindex="-1"></a>&lt;div style="height: 18px;"&gt;&lt;/div&gt;</span>
 <span id="cb211-3438"><a href="#cb211-3438" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3439"><a href="#cb211-3439" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3439"><a href="#cb211-3439" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Since trees live and are (hopefully) productive for many years, they experience many different temperature dynamics during their productive lifetime.</span>
 <span id="cb211-3440"><a href="#cb211-3440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3441"><a href="#cb211-3441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3441"><a href="#cb211-3441" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For optimal production, trees should fulfill their climatic needs in all of these years.</span>
 <span id="cb211-3442"><a href="#cb211-3442" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3443"><a href="#cb211-3443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3443"><a href="#cb211-3443" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This is why, when we select trees for planting, we need information on the plausible range of ‘weathers’ we can expect. </span>
 <span id="cb211-3444"><a href="#cb211-3444" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3445"><a href="#cb211-3445" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3445"><a href="#cb211-3445" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Based on this, we would be able to select trees that safely fulfill their chilling requirements in all plausible weather situations, or we could choose trees that strike a balance between early flowering and the risk of spring frost. </span>
 <span id="cb211-3446"><a href="#cb211-3446" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3447"><a href="#cb211-3447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3447"><a href="#cb211-3447" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>All such decisions require information on how likely it is for our orchard to experience certain conditions.</span>
 <span id="cb211-3448"><a href="#cb211-3448" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3449"><a href="#cb211-3449" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3449"><a href="#cb211-3449" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The plausible range of ‘weathers’ we can expect is defined by the local climate, which is the long-term average of the annually observed weather. </span>
 <span id="cb211-3450"><a href="#cb211-3450" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3451"><a href="#cb211-3451" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3452"><a href="#cb211-3452" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb211-3453"><a href="#cb211-3453" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb211-3454"><a href="#cb211-3454" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
-<span id="cb211-3455"><a href="#cb211-3455" aria-hidden="true" tabindex="-1"></a><span class="in">    </span></span>
+<span id="cb211-3451"><a href="#cb211-3451" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We can interpret this ‘climate’ as a virtual collection of all possible weather situations for a given location, from which we receive one random draw each year.</span>
+<span id="cb211-3452"><a href="#cb211-3452" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3453"><a href="#cb211-3453" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Annual weather can be interpreted as a random draw from the plausible distribution of all possible ‘weathers’.</span>
+<span id="cb211-3454"><a href="#cb211-3454" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3455"><a href="#cb211-3455" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>For planning purposes, it would be much more useful to know this virtual distribution of possible ‘weathers’ than just looking at the random samples that happened to be drawn.</span>
 <span id="cb211-3456"><a href="#cb211-3456" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3457"><a href="#cb211-3457" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb211-3458"><a href="#cb211-3458" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb211-3457"><a href="#cb211-3457" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>So far, we’ve only been able to get these samples - that was the historic analysis of observed chill.</span>
+<span id="cb211-3458"><a href="#cb211-3458" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3459"><a href="#cb211-3459" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We’ll try to get to the actual climate, and from there to ways to use this knowledge for producing temperature profiles for locations of interest that facilitate orchard planning.</span>
+<span id="cb211-3460"><a href="#cb211-3460" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3461"><a href="#cb211-3461" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3462"><a href="#cb211-3462" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3463"><a href="#cb211-3463" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3464"><a href="#cb211-3464" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3465"><a href="#cb211-3465" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3466"><a href="#cb211-3466" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3467"><a href="#cb211-3467" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3468"><a href="#cb211-3468" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3469"><a href="#cb211-3469" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3470"><a href="#cb211-3470" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3471"><a href="#cb211-3471" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3472"><a href="#cb211-3472" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3473"><a href="#cb211-3473" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3474"><a href="#cb211-3474" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3475"><a href="#cb211-3475" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3476"><a href="#cb211-3476" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3477"><a href="#cb211-3477" aria-hidden="true" tabindex="-1"></a><span class="in">        </span></span>
+<span id="cb211-3478"><a href="#cb211-3478" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3479"><a href="#cb211-3479" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3480"><a href="#cb211-3480" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3481"><a href="#cb211-3481" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3482"><a href="#cb211-3482" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3483"><a href="#cb211-3483" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3484"><a href="#cb211-3484" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3485"><a href="#cb211-3485" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3486"><a href="#cb211-3486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3487"><a href="#cb211-3487" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3488"><a href="#cb211-3488" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3489"><a href="#cb211-3489" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3490"><a href="#cb211-3490" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3491"><a href="#cb211-3491" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3492"><a href="#cb211-3492" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3493"><a href="#cb211-3493" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb211-3494"><a href="#cb211-3494" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb211-3495"><a href="#cb211-3495" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb211-3496"><a href="#cb211-3496" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb211-3497"><a href="#cb211-3497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3498"><a href="#cb211-3498" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb211-3499"><a href="#cb211-3499" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

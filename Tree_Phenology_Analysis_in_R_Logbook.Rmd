@@ -3258,7 +3258,7 @@ kable(CH_table) %>%
 
 ***1. Use `chillR` functions to find out how many gaps you have in this dataset (even if you have none, please still follow all further steps)*** 
 
-There are large gaps in the dataset, particularly missing data for whole years between 1992 to 2002. 
+There are large gaps in the dataset, particularly missing data for whole years between 1992 and 2002. 
 
 ```{r 11.5.1}
 
@@ -3414,8 +3414,49 @@ This is what I found:
       
 - Since I want the dataset to be patched with values below the bias thresholds, I downloaded the station 1 last (`MS_station_list_dwd$Station_ID[c(2,4,7,1)]`), and it worked perfectly! 
 
+Another thing I want to add here is I selected the best station from the list generated from the GSOD database, and patched that station with data from DWD database. Practically, I should have chosen the station 1 from the DWD list&mdash; I wouldn't have any gaps and it would have been a better choice in terms of data quality. But, for the sake of doing the following exercises, I must either create gaps or use the station I chose from GSOD database. I chose the latter option because there might be times I could not go back to the past and redo everything&mdash; I guess it is a better practice to adapt and keep going.
+
 <br>
 
+## Chapter 12: Generating temperature scenarios
+
+### <span style="color:#71797E">12.1</span>&nbsp; Chill scenarios
+
+<div style="height: 18px;"></div>
+
+- Information on chill availability (or other agroclimatic conditions) at a given site is crucial for orchard managers selecting tree species and cultivars for their orchards.
+
+- Looking at the historic record has already given us a lot of useful information, but this isn’t yet exactly the information that a grower making planting decisions needs. 
+
+- What is really needed is a site-specific agroclimatic characterization that provides an impression of the range of conditions that we can reasonably expect at this location, i.e. how likely it is for the orchard to experience certain levels of chill, heat or whatever other metric we are interested in.
+
+<br>
+
+### <span style="color:#71797E">12.2</span>&nbsp; Risk assessment in orchard planning
+
+<div style="height: 18px;"></div>
+
+- Since trees live and are (hopefully) productive for many years, they experience many different temperature dynamics during their productive lifetime.
+
+- For optimal production, trees should fulfill their climatic needs in all of these years.
+
+- This is why, when we select trees for planting, we need information on the plausible range of ‘weathers’ we can expect. 
+
+- Based on this, we would be able to select trees that safely fulfill their chilling requirements in all plausible weather situations, or we could choose trees that strike a balance between early flowering and the risk of spring frost. 
+
+- All such decisions require information on how likely it is for our orchard to experience certain conditions.
+
+- The plausible range of ‘weathers’ we can expect is defined by the local climate, which is the long-term average of the annually observed weather. 
+
+- We can interpret this ‘climate’ as a virtual collection of all possible weather situations for a given location, from which we receive one random draw each year.
+
+- Annual weather can be interpreted as a random draw from the plausible distribution of all possible ‘weathers’.
+
+- For planning purposes, it would be much more useful to know this virtual distribution of possible ‘weathers’ than just looking at the random samples that happened to be drawn.
+
+- So far, we’ve only been able to get these samples - that was the historic analysis of observed chill.
+
+- We’ll try to get to the actual climate, and from there to ways to use this knowledge for producing temperature profiles for locations of interest that facilitate orchard planning.
 
 
 
