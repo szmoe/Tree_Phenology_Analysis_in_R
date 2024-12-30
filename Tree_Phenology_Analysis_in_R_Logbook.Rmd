@@ -39,6 +39,7 @@ library(reshape2)
 library(downlit)
 library(xml2)
 library(stats)
+library(patchwork)
 ```
 
 <style>
@@ -3226,7 +3227,7 @@ CH_table <-
 CH_table$Chill_Portions <- (all_chill %>% 
                           group_by(name) %>%
                          summarise(total_value = sum(value, na.rm = TRUE)) %>%
-                         ungroup())$ total_value
+                         ungroup())$ total_value 
                               
 
 
@@ -3458,6 +3459,878 @@ Another thing I want to add here is I selected the best station from the list ge
 
 - We’ll try to get to the actual climate, and from there to ways to use this knowledge for producing temperature profiles for locations of interest that facilitate orchard planning.
 
+<br>
+
+### <span style="color:#71797E">12.3</span>&nbsp; Weather generators
+
+<div style="height: 18px;"></div>
+
+- The best source of information for characterizing the climate of a given location consists in long-term weather records collected there.
+
+- Long-term weather records can be used to easily calculate means of monthly temperatures, rainfall extremes, the frequency of frost events and various other metrics.
+
+- Weather generators vary widely in the way they characterize climatic settings.
+
+- The [RMAWGEN](https://cran.r-project.org/web/packages/RMAWGEN/index.html) package is the only weather generator that is compatible `chillR` structure.
+
+- [LARS-WG](https://sites.google.com/view/lars-wg/) is another weather generator that uses both temperature and rainfall data, identifying the typical length of dry and wet spells and producing distinct temperature profiles for each of these weather situations. (Luedeling et al., [2011a](https://link.springer.com/article/10.1007/s00484-010-0352-y), [2011b](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0020155))
+    - The tool `chillR` currently uses doesn’t do that&mdash; it doesn’t even need precipitation data&mdash; but it also seems to be doing a good job. 
+
+\n
+
+- It is somewhat difficult to assess the performance of these tools, so there is probably still room for improvement here.
+
+<br>
+
+### <span style="color:#71797E">12.4</span>&nbsp; Weather generation in `chillR`
+
+<div style="height: 18px;"></div>
+
+- `chillR` currently can’t generate weather in a comprehensive way, but only focuses on temperature.
+
+- The `temperature_generation` function in `chillR` first needs to be calibrated with observed weather data, in our case long-term temperature data provided in the `chillR` format.
+
+- Based on this, it internally calculates parameters that characterize the local climate, which are then used to simulate a user-specified number or years of synthetic temperature data.
+
+- Besides the temperature data, for which all years have to be complete, the `temperature_generation` function needs a bit of additional information:
+    - **years:** a vector specifying the years within the observed record that we want to use for climate characterization
+    - **sim_years:** the years we want to simulate. Note that we’re not really simulating weather for the specific years we indicate here&mdash; this is just for the way years are labeled in the output dataset
+    - A few optional elements, e.g. `temperature_scenario`&mdash; if we use the default value, which consists of a lot of zeros, it will generate a warning message. 
+    
+\n
+
+- Here is how to use the weather generator (just the first line of the code chunk) on the Klein-Altendorf dataset (`KA_weather`), and to get an impression of how the generated data compare with the observed records.
+
+```{r 12.4a}
+
+# Use weather generator on real weather data to generate simulated temp dataset
+Temp <- KA_weather %>% 
+  temperature_generation(years=c(1998,2005),
+                         sim_years = c(2001,2100))
+    
+# Create a new dataset by combining observed and simulated data
+                              # filter only data between these years
+Temperatures <- KA_weather %>% filter(Year %in% 1998:2005) %>% 
+  # only take observed data and add observe note as new Data_source column 
+  cbind(Data_source="observed") %>% 
+  rbind(# Only select those columns from the list 1 of Temp (it has only one list)
+    Temp[[1]] %>% select(c(Year,Month,Day,Tmin,Tmax)) %>% 
+# only take simulated data and bind it- stack the observed and simulated rows
+      cbind(Data_source="simulated")
+    ) %>%
+  # add Date column in chillR format
+  mutate(Date=as.Date(ISOdate(2000,Month,Day)))
+
+# Plot the data for Tmin
+ggplot(data=Temperatures,
+       aes(Date,Tmin)) +
+  geom_smooth(aes(colour = factor(Year))) + # different colors for each year
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") + # hides legend
+  # customize x-axis labels:
+  # %b:abbreviated month name, %B:full month name, %Y:year, %d:day of month,
+  # %b %Y:Abbreviated month followed by year
+  scale_x_date(date_labels = "%b")
+
+# Plot the data for Tmax
+ggplot(data=Temperatures,
+       aes(Date,Tmax)) +
+  geom_smooth(aes(colour = factor(Year))) +
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_x_date(date_labels = "%b")
+
+```
+
+<br>
+
+- The `geom_smooth` function of ggplot removed much of the noise in the dataset, which would otherwise have made this figure hard to read.
+
+- The overall temperature dynamics were represented quite well, though it is certainly possible that some nuances of the local weather were missed.
+
+- In the simulated dataset, we now have 100 years of data, even though we only used 8 years for calibration.
+
+- Based on these 100 years, we can now get a pretty good idea of the frequency of particular temperature-related events.
+
+- Let’s look at the distribution of winter chill for Klein-Altendorf based on this analysis:
+
+```{r 12.4b}
+
+# Generate hourly temps for observed data
+chill_observed <- Temperatures %>%
+  filter(Data_source == "observed") %>%
+  stack_hourly_temps(latitude = 50.4) %>% 
+  chilling(Start_JDay = 305,
+           End_JDay = 59)
+
+# Generate hourly temps for simulated data 
+chill_simulated <- Temperatures %>%
+  filter(Data_source == "simulated") %>%
+  stack_hourly_temps(latitude = 50.4) %>%
+  chilling(Start_JDay = 305,
+           End_JDay = 59)
+
+# Bind observed and simulated data (stacked rows)
+chill_comparison <-
+  cbind(chill_observed,
+        Data_source = "observed") %>%
+  rbind(cbind(chill_simulated,
+              Data_source = "simulated"))
+
+# Remove years with incomplete data days
+chill_comparison_full_seasons <- 
+  chill_comparison %>%
+  filter(Perc_complete == 100)
+
+# Plot the data
+ggplot(chill_comparison_full_seasons,
+       aes(x=Chill_portions)) + 
+  geom_histogram(binwidth = 1,
+                 aes(fill = factor(Data_source))) +
+  theme_bw(base_size = 20) +
+  labs(fill = "Data source") +
+  xlab("Chill accumulation (Chill Portions)") +
+  ylab("Frequency")
+
+```
+
+<br>
+
+- Note that in the code chunk above, we had to manually remove all incomplete winter seasons. 
+
+- Now we have a histogram showing the distribution of chill that it would have been reasonable to expect in Klein-Altendorf betwen 1998 and 2005, and these distributions get better with more observations.
+
+- We can also plot these data as a cumulative distribution function, which makes it easy to extract the risk of falling below a particular level of chill accumulation.
+
+```{r 12.4c}
+
+# Filter only the simulated data
+chill_simulations <-
+  chill_comparison_full_seasons %>%
+  filter(Data_source == "simulated")
+
+# Plot the chill portions of the data
+ggplot(chill_simulations,
+       aes(x = Chill_portions)) +
+  # Compute empirical cumulative distribution
+  stat_ecdf(geom = "step", # a step plot
+            lwd = 1.5,
+            col = "blue") +
+  ylab("Cumulative probability") +
+  xlab("Chill accumulation (in Chill Portions)") +
+  theme_bw(base_size = 20)
+
+
+```
+
+<br>
+
+- We can also directly compute this using the `quantile` function.
+
+```{r 12.4d}
+
+# Here's the amount of chill that is exceeded in 90% of all years.
+quantile(chill_simulations$Chill_portions,0.1)
+
+# and here's the 50% confidence interval (25th to 75th percentile)
+quantile(chill_simulations$Chill_portions, c(0.25,0.75))
+
+```
+
+<br>
+
+- Note that the 10% quantile calculated above is equivalent to ‘Safe Winter Chill’. 
+
+![Illustration of the concept of Safe Winter Chill, which is defined as the 10% quantile of the typical distribution of chill at a particular location and best calculated by using a weather generator. ([Luedeling et al., 2009d](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0006166))](./pic/ch12_1.png)
+
+<br>
+
+- The idea behind Safe Winter Chill is that a grower might be able to tolerate a small risk of not meeting a tree’s chilling requirement.
+
+- If we grow a tree with a chilling requirement that corresponds exactly to the Safe Winter Chill of the site, we should expect chill-related problems in about one out of ten years&mdash; may or may not be an okay threshold based on the grower's risk tolerance, but it is still a reasonable threshold to use. 
+
+- A similar metric can be calculated for a grower with a different level of risk tolerance. 
+
+<br>
+
+### <span style="color:#71797E">12.5</span>&nbsp; Exercises on temperature generation
+
+<div style="height: 18px;"></div>
+
+***1. For the location you chose for your earlier analyses, use `chillR`’s weather generator to produce 100 years of synthetic temperature data.***
+
+```{r 12.5.1, , fig.width=10, fig.height=8}
+
+MS_patched_weather <- read.csv("data/MS/MS_patched_weather.csv")
+
+MS_temp <- MS_patched_weather %>% 
+  temperature_generation(years=c(1990,2020),
+                         sim_years = c(2001,2100))
+
+# Modify the MS_patched_weather dataset to have same column structures as MS_temp
+MS_patched_weather_fixed <- MS_patched_weather %>%
+  select(Year, Month, Day, Tmin, Tmax)
+    
+
+MS_temperatures <- MS_patched_weather_fixed %>% filter(Year %in% 1990:2020) %>%
+  cbind(Data_source="observed") %>%
+  rbind(
+    MS_temp[[1]] %>% select(c(Year,Month,Day,Tmin,Tmax)) %>% 
+      cbind(Data_source="simulated")
+    ) %>%
+  mutate(Date=as.Date(ISOdate(2000,Month,Day)))
+
+
+# Plot for Tmin
+p1 <- ggplot(data=MS_temperatures, aes(Date, Tmin)) +
+  geom_smooth(aes(colour = factor(Year))) +
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_x_date(date_labels = "%b")
+
+# Plot for Tmax
+p2 <- ggplot(data=MS_temperatures, aes(Date, Tmax)) +
+  geom_smooth(aes(colour = factor(Year))) +
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_x_date(date_labels = "%b")
+
+# Combine the plots vertically
+p1 / p2
+
+```
+
+<br>
+
+***2. Calculate winter chill (in Chill Portions) for your synthetic weather, and illustrate your results as histograms and cumulative distributions.***
+
+**Winter chill in Mössingen as histogram:**
+
+```{r 12.5.2a}
+
+MS_chill_observed <- MS_temperatures %>%
+  filter(Data_source == "observed") %>%
+  stack_hourly_temps(latitude = 48.4) %>%
+  chilling(Start_JDay = 305,
+           End_JDay = 59)
+  
+MS_chill_simulated <- MS_temperatures %>%
+  filter(Data_source == "simulated") %>%
+  stack_hourly_temps(latitude = 48.4) %>%
+  chilling(Start_JDay = 305,
+           End_JDay = 59)
+  
+MS_chill_comparison <-
+  cbind(MS_chill_observed,
+        Data_source = "observed") %>%
+  rbind(cbind(MS_chill_simulated,
+              Data_source = "simulated"))
+  
+MS_chill_comparison_full_seasons <- 
+  MS_chill_comparison %>%
+  filter(Perc_complete == 100)
+
+ggplot(MS_chill_comparison_full_seasons,
+       aes(x=Chill_portions)) + 
+  geom_histogram(binwidth = 1,
+                 aes(fill = factor(Data_source))) +
+  theme_bw(base_size = 20) +
+  labs(fill = "Data source") +
+  xlab("Chill accumulation (Chill Portions)") +
+  ylab("Frequency")
+
+
+```
+
+<br>
+
+**Winter chill in Mössingen as cumulative distribution:**
+
+```{r 12.5.2b}
+
+MS_chill_simulations <-
+  MS_chill_comparison_full_seasons %>%
+  filter(Data_source == "simulated")
+
+ggplot(MS_chill_simulations,
+       aes(x = Chill_portions)) +
+  stat_ecdf(geom = "step",
+            lwd = 1.5,
+            col = "blue") +
+  ylab("Cumulative probability") +
+  xlab("Chill accumulation (in Chill Portions)") +
+  theme_bw(base_size = 20)
+
+```
+
+
+<br>
+
+***3. Produce similar plots for the number of freezing hours (<0°C) in April (or October, if your site is in the Southern Hemisphere) for your location of interest.***
+
+**Check JDay for the month of April:**
+
+```{r 12.5.3a, message=FALSE, warning=FALSE}
+
+# Add a freezing model 
+df <- data.frame(
+  lower= c(-1000, 0),
+  upper= c(    0, 1000),
+  weight=c(    1, 0))
+
+freezing_hours <- function(x) step_model(x,df)
+
+## Check JDay number for the month of April
+
+# Generate JDay for the dataset
+JDay_MS <- make_JDay(MS_temperatures$Date)
+
+# Create a data frame because JDay_MS is a vector
+JDay_MS_df <- data.frame(Date = as.Date(JDay_MS))
+
+# Extract Year, Month, and Day from the Date (to show JDay output as table)
+# This was only done because of the error message:
+# "Table is missing at least one required column ('Day','Month' or 'Year')"
+JDay_MS_df$Year <- format(JDay_MS_df$Date, "%Y")
+JDay_MS_df$Month <- format(JDay_MS_df$Date, "%m")
+JDay_MS_df$Day <- format(JDay_MS_df$Date, "%d")
+
+# Display only for the month of April
+JDay_april <- JDay_MS_df[91:120, ] 
+
+kable(JDay_april[c(1, nrow(JDay_april)), ], col.names =
+        c("JDay", "Date", "Year", "Month", "Day")) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+**Frost incidence in Mössingen as histogram:**
+
+```{r 12.5.3b}
+
+
+MS_apr_chill_observed <- MS_temperatures %>%
+  filter(Data_source == "observed") %>% 
+  stack_hourly_temps(latitude = 48.4) %>%
+  tempResponse(Start_JDay = 91,
+               End_JDay = 120,
+               models = list(Frost = freezing_hours,
+                             Chill_portions = Dynamic_Model,
+                             GDH = GDH))
+
+
+MS_apr_chill_simulated <- MS_temperatures %>%
+  filter(Data_source == "simulated") %>% 
+  stack_hourly_temps(latitude = 48.4) %>%
+  tempResponse(Start_JDay = 91, 
+               End_JDay = 120,
+               models=list(Frost = freezing_hours,
+                           Chill_portions = Dynamic_Model,
+                           GDH = GDH))
+
+# Combine observed and simulated in one data frame
+MS_apr_chill_comparison <-
+  cbind(MS_apr_chill_observed, 
+        Data_source = "observed") %>%
+  rbind(cbind(MS_apr_chill_simulated, 
+              Data_source = "simulated"))
+
+# Only include the columns with full data 
+MS_apr_chill_comparison_full_seasons <-
+  MS_apr_chill_comparison %>%
+  filter(Perc_complete == 100)
+
+
+ggplot(MS_apr_chill_comparison_full_seasons,
+       aes(x = Frost)) + 
+  geom_histogram(binwidth = 10,
+                 aes(fill = factor(Data_source))) +
+  theme_bw(base_size = 10) +
+  labs(fill = "Data source") +
+  xlab("Frost incidence during April (hours)") +
+  ylab("Frequency")
+
+```
+
+<br>
+
+**Frost incidence in Mössingen as cumulative probability:**
+
+```{r 12.5.3c}
+
+MS_apr_chill_simulations <-
+  MS_apr_chill_comparison_full_seasons %>%
+  filter(Data_source == "simulated")
+  
+
+ggplot(MS_apr_chill_simulations,
+       aes(x = Frost)) +
+  stat_ecdf(geom = "step",
+            lwd = 1.5,
+            col = "blue") +
+  ylab("Cumulative probability") +
+  xlab("Frost incidence during April (hours)") +
+  theme_bw(base_size = 20)
+
+```
+
+<br>
+
+## Chapter 13: Saving and loading data (and hiding this in markdown)
+
+### <span style="color:#71797E">13.1</span>&nbsp; Saving and loading data
+
+<div style="height: 18px;"></div>
+
+- `save` and `load` functions in `R`&mdash; may not allow to manually open the file for inspection outside `R`?
+
+- For simple `data.frames` saving can simply be done using the `write.csv` function. 
+
+- `chillR` function called `read_tab` is similar to `R`'s inbuilt `read.csv`, read the comma-separated values of the saved files, but the German computers separate values in csv file by semicolons&mdash; the `read_tab` function recognizes this and correctly reads files from different language regions. 
+
+```{r 13.1a}
+
+kable(head(Temperatures)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Save the data
+write.csv(Temperatures, file="data/OT/Temperatures.csv", 
+          row.names = FALSE) # don't want rows to be numbered
+
+# Load the data again
+Temperatures <- read_tab("data/OT/Temperatures.csv")
+
+kable(head(Temperatures)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+- To save objects that are more complex than simple `data.frames` (a list of multiple `data.frames`), `chillR` includes functions for writing and reading lists that consist of numbers, character strings and/or data.frames. 
+
+```{r 13.1b}
+
+# Create test_list with three elements- double, character, list
+test_list <- list(Number = 1,
+                  String = "Thanks for using chillR!",
+                  DataFrame = data.frame(a = c(1,2,3),
+                                         b = c(3,2,1),
+                                         c = c(5,4,3)))
+
+# Save the test_list in local file using `save_temperature_scenarios` function
+# It saves dataset as three separate csv files
+save_temperature_scenarios(test_list,
+                           path = "data/OT",
+                           prefix = "test_list")
+
+# Retreive information from three saved files using another chillR function
+test_list <- load_temperature_scenarios(path = "data/OT",
+                                        prefix = "test_list")
+```
+
+<br>
+
+### <span style="color:#71797E">13.2</span>&nbsp; Hiding all this from the readers of our markdown file
+
+<div style="height: 18px;"></div>
+
+- Normal code chunks start with ” `{r} “. Options can be added after the r, separated by a comma.
+    - option “echo=FALSE” means that the code block will be run but the code and output are not produced in the final document. We’ll still see ‘side effects’, such as figures that are produced.
+    - option “eval=FALSE” means that the code will be shown in the final document, but it will not be run.
+    - More options for code chunk are [here.](https://rmarkdown.rstudio.com/lesson-3.html)
+
+<br>
+
+## Chapter 14: Historic temperature scenarios
+
+### <span style="color:#71797E">14.1</span>&nbsp; Climate change scenarios
+
+<div style="height: 18px;"></div>
+
+- We recently learned how to use a weather generator accessed by `chillR` to produce agroclimatic profiles for a given location. We calibrated the weather generator with historically observed temperature data, and the profile we produced was representative of climatic conditions during the period used for calibration.
+
+- The weather generator can also produce scenarios that represent different climatic conditions. Specifically, the `temperature_generation` function contains a parameter called `temperature_scenario`, which we can use to send the necessary instructions to the weather generator.
+
+- The temperature_scenario parameter requires a `data.frame` with columns `Tmin` and `Tmax`. Each of these columns should have 12 values that specify changes to the mean minimum and maximum temperatures, respectively, for each month of the year. If we don’t specify this parameter, the function uses the default object&mdash; a `data.frame` with zeros for all changes.
+
+- Our first climate change scenario will be simple. We’ll just add arbitrary numbers to all the monthly *T~min~* and *T~max~* values.
+
+```{r 14.1a}
+
+# Here's the call from the earlier lesson. We don't have to run this again.
+# Temp <- temperature_generation(KA_weather,
+#                                years = c(1998,2005),
+#                                sim_years = c(2001,2100))
+ 
+# Now we make a temperature scenario that raises all temperatures by 2°C
+change_scenario <- data.frame(Tmin = rep(2,12), # for 12 months
+                              Tmax = rep(2,12))
+
+kable(change_scenario) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Input change_scenario to simulated temperature generations
+Temp_2 <- temperature_generation(KA_weather,
+                                 years = c(1998,2005),
+                                 sim_years = c(2001,2100),
+                                 temperature_scenario = change_scenario)
+
+# As before, we'll make a data.frame that contains all
+# our data, so we can take a look at it.
+
+Temperature_scenarios <- KA_weather %>%
+  filter(Year %in% 1998:2005) %>%
+  cbind(Data_source = "observed") %>%
+  rbind(Temp[[1]] %>% 
+          select(c(Year, Month, Day, Tmin, Tmax)) %>% 
+          cbind(Data_source = "simulated")
+        ) %>%
+  rbind(Temp_2[[1]] %>%
+          select(c(Year, Month, Day, Tmin, Tmax)) %>% 
+          cbind(Data_source = "Warming_2C")
+        ) %>%
+  mutate(Date = as.Date(ISOdate(2000,
+                                Month,
+                                Day)))
+
+```
+
+<br>
+
+- Plot for `Tmin` after applying `change_scenario` (increase temp by 2°C):
+
+```{r 14.1b}
+
+# Since the structure of this dataset is the same as we had in the earlier 
+# lesson, we can use identical code to illustrate it 
+# - just have to replace the data.frame name.
+ggplot(data = Temperature_scenarios, 
+       aes(Date,Tmin)) +
+  geom_smooth(aes(colour = factor(Year))) +
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_x_date(date_labels = "%b")
+
+```
+
+<br>
+
+- - Plot for `Tmax` after applying `change_scenario` (increase temp by 2°C):
+
+```{r 14.1c}
+
+ggplot(data = Temperature_scenarios,
+       aes(Date,Tmax)) +
+  geom_smooth(aes(colour = factor(Year))) +
+  facet_wrap(vars(Data_source)) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "none") +
+  scale_x_date(date_labels = "%b")
+
+```
+
+<br>
+
+- This was an arbitrary climate scenario. Nobody expects future changes to be so uniformly distributed across all months, and this certainly hasn’t happened in the past.
+
+- This is, however, pretty similar to ([Luedeling et al., 2009b](https://link.springer.com/article/10.1007/s10584-009-9581-7))'s first attempt at climate change scenario modeling. 
+
+- Let’s try to make scenarios that are a bit more realistic. For this, we start with scenarios that represent particular years from the historic record. As we discussed already, we could of course simply look at temperatures recorded during a particular year. We may, however, also be interested in what temperature conditions should have been considered normal at the time, rather than what actually happened. 
+
+- Such a perspective can make it much easier to identify historic trends, because we can now try to evaluate the gradual shift in climate (the collection of plausible weather) rather than just looking at the random weathers we’ve been dealt in the past, where trends are often obscured by interannual variation and possibly by some freaky outliers that distort our trend analysis.
+
+<br>
+
+### <span style="color:#71797E">14.2</span>&nbsp; Making historic temperature scenarios
+
+<div style="height: 18px;"></div>
+
+- To make this a meaningful exercise, we’ll need a long-term dataset. 
+
+```{r 14.2a}
+
+## Download and patch weather for Bonn
+
+# download weather station list for the vicinity of Bonn
+station_list <- handle_gsod(action = "list_stations",
+                            location=c(7.1,50.8))
+
+# download weather data for Cologne/Bonn airport and convert it to chillR format
+Bonn_weather <- handle_gsod(action = "download_weather",
+                            location = station_list$chillR_code[1],
+                            # more years than in previous exercies
+                            time_interval = c(1973,2019)) %>% 
+  handle_gsod()
+
+# check record for missing data
+kable(fix_weather(Bonn_weather$`KOLN BONN`)$QC,
+      caption = "Check for missing data") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# (incidentally almost all gaps are for years covered by the KA_weather dataset)
+Bonn_patched <- patch_daily_temperatures(
+  weather = Bonn_weather$`KOLN BONN`,
+  patch_weather = list(KA_weather))
+
+kable(fix_weather(Bonn_patched)$QC,
+      caption = "Check for missing data after patching") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# There are still 4 days missing here, out of 47 years -
+# let's simply interpolate these gaps now
+
+Bonn<-fix_weather(Bonn_patched)
+
+Bonn_temps<-Bonn$weather
+
+
+```
+
+<br>
+
+- We could now easily run the weather generator to produce weather scenarios that correspond to the normal climate between 1973 and 2019.
+
+- Since temperatures have been gradually rising over this period, the best guess for the year that would best represent this scenario would be the median of the time period, which is 1996. 
+
+- But let’s say we’re not interested in 1996, but in scenarios representing 1980, 1990, 2000 and 2010. How can we make such scenarios?
+
+- The way to address this challenge is to examine the historic temperature record to determine the changes that happened between the year we’re interested in and the year our temperature data represent.
+
+- Let’s call this representative year the **baseline** of our observed temperature data, and the years we want to make simulations for the **simulation** years.
+
+- `chillR` has a function that helps us make temperature scenarios from temperature records, which is called `temperature_scenario_from_records`.
+
+```{r 14.2b}
+
+scenario_1980 <- temperature_scenario_from_records(weather = Bonn_temps,
+                                                   year = 1980)
+
+kable(do.call(rbind, scenario_1980$`1980`)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# data: a data.frame specifying Tmin and Tmax values that are representative of 
+# the year of interest
+
+# scenario_year: the year we’re interested in
+
+# reference_year: for scenarios that describe temperature changes 
+# (which is not the case here), this would specify relative to what year 
+# these changes are expressed (NA in this case)
+
+# scenario_type: specifies whether this scenario contains absolute temperatures 
+# for the year of interest (true in this case), or whether it expressed changes 
+# relative to another year
+
+# labels: contains additional information we can attach to scenarios. 
+# In this case, this says “running mean scenario”. 
+
+```
+
+<br>
+
+- This explains the warning messages we previously received when we first started running our weather generator:
+    - *scenario doesn’t contain named elements&mdash; consider using the following element names: ‘data’, ‘reference_year’,‘scenario_type’,‘labels’*
+    - *setting `scenario_type` to ‘relative’*
+    - *Reference year missing&mdash; can’t check if relative temperature scenario is valid*
+
+\n
+
+- Our input for the scenario at that time was simply a `data.frame`, but we’ve just seen that scenarios can contain more information.The `temperature_generation` recognized this and decided to warn us. This is because all this information has a purpose, and if it’s not provided, `temperature_generation` has to make some assumptions on what it’s supposed to do with the information. 
+
+- The second element of the warning indicates that the `scenario_type` was automatically set to ‘relative’. The function contains some decision rules for deciding whether a temperature scenario specifies absolute or relative temperatures, and here we are informed about what the outcome of that decision was.
+
+- Finally, we are informed that the reference year is missing. This means that we’ve specified a relative temperature scenario, but we didn’t specify relative to what. In our case, this was simply the year that the historic record represented (e.g. the median year of the observed record), but this isn’t always clear, as we’ll see when we start talking about future projections.
+
+- Well, in the scenario we just built here, we shouldn’t get such warning messages, because now we have a comprehensive list that contains all the information the `temperature_generation` function needs. 
+
+```{r 14.2c, warning=TRUE}
+
+temps_1980 <- temperature_generation(weather = Bonn_temps,
+                                     years = c(1973,2019),
+                                     sim_years = c(2001,2100),
+                                     temperature_scenario = scenario_1980)
+
+```
+
+- We still got a warning message, which means that the weather generator evaluated the calibration dataset with respect to variation of temperatures around the mean temperatures. It then generated a dataset with means (for *T~min~* and *T~max~* of each month) that correspond to the (absolute) temperature scenario we provided, and variation similar to that in the observed record. This is what we wanted, so we’re good.
+
+- If we want to convert this absolute temperature scenario into a relative scenario, we have to specify a baseline scenario to compare it with. In our case, 1996 is a good choice, because that is the median year of our observed record. So let’s make a scenario for that year:
+
+```{r 14.2d}
+
+# Absolute temperature scenario, where the baseline (reference_year) is NA
+scenario_1996 <- temperature_scenario_from_records(weather = Bonn_temps,
+                                                   year = 1996)
+kable(do.call(rbind, scenario_1996$`1996`),
+      caption = "Absolute temperature scenario") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+- We can produce a relative change scenario by applying the `temperature_scenario_baseline_adjustment` function:
+
+```{r 14.2e}
+
+
+relative_scenario <- temperature_scenario_baseline_adjustment(
+  baseline = scenario_1996,
+  temperature_scenario = scenario_1980)
+
+kable(do.call(rbind, relative_scenario$`1980`),
+      caption = "Relative change scenario") %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+## Now we have a relative change scenario - a list with the following elements:
+
+# data: a data.frame with Tmin and Tmax columns, but now containing
+# relative changes between 1996 and 1980 (all negative values, 
+# because 1980 was cooler than 1996)
+
+# scenario_year: still 1980
+
+# reference_year: now 1996
+
+# scenario_type: now ‘relative’
+
+# labels: still ‘running mean scenario’
+
+```
+
+- We can now try to apply this scenario in a similar way to what we did earlier, without generating error message because we provided the `temperature_generation` function with everything it needed to know:
+
+```{r 14.2f, warning=TRUE}
+
+temps_1980<-temperature_generation(weather = Bonn_temps,
+                                   years = c(1973,2019),
+                                   sim_years = c(2001,2100),
+                                   temperature_scenario = relative_scenario)
+
+```
+
+<br>
+
+- So let’s now make all the scenarios we had in mind. This is facilitated by most of the functions also accepting vectors and lists, rather than just single numbers and `data.frames`.
+
+```{r 14.2f}
+
+# Create scenarios from records of interested years
+all_past_scenarios <- temperature_scenario_from_records(
+  weather = Bonn_temps,
+  year = c(1980,
+           1990,
+           2000,
+           2010))
+
+# Make temperature scenario relative to a particular baseline 
+adjusted_scenarios <- temperature_scenario_baseline_adjustment(
+  baseline = scenario_1996,
+  temperature_scenario = all_past_scenarios)
+
+# Generate temperatures for simulation years, relative to adjusted_scenarios
+all_past_scenario_temps <- temperature_generation(
+  weather = Bonn_temps,
+  years = c(1973,2019),
+  sim_years = c(2001,2100),
+  temperature_scenario = adjusted_scenarios)
+
+# Save as four different files of 100 year simulations
+save_temperature_scenarios(all_past_scenario_temps,
+                           "data/bonn", "Bonn_hist_scenarios")
+
+```
+
+
+- The `all_past_scenario_temps object` is a list that now contains 100 years of synthetic weather for all the past scenarios we had in mind.
+
+- Now, to calculate chill accumulation again, we could go back and find all the functions we used before and apply them to each of the four temperature scenarios we just generated, OR use a `chillR` function, `tempResponse_daily_list` that has already automated all this. 
+
+- To demonstrate, make a simple frost model and select only the Dynamic Model and GDH Model for the evaluation:
+
+```{r 14.2g}
+
+frost_model <- function(x)
+  # Calculate heat for temperate trees according to a stepwise model provided
+  step_model(x,
+             data.frame(
+               lower=c(-1000,0),
+               upper=c(0,1000),
+               weight=c(1,0))) # user-defined stepwise weight function 
+
+# Call the functions for each model for chill, heat and frost accumulations
+models <- list(Chill_Portions = Dynamic_Model,
+               GDH = GDH, 
+               Frost_H = frost_model)
+
+# Calculate chill accumulation for the four temperature scenarios generated
+chill_hist_scenario_list <- tempResponse_daily_list(all_past_scenario_temps,
+                                                    latitude = 50.9,
+                                                    Start_JDay = 305,
+                                                    End_JDay = 59,
+                                                    models = models)
+
+# Remove all the incomplete winters from the record, before saving
+chill_hist_scenario_list <- lapply(chill_hist_scenario_list,
+                                   function(x) x %>%
+                                     filter(Perc_complete == 100))
+
+# Include the place name and the start and end dates of the considered period
+# in the saved file name
+save_temperature_scenarios(chill_hist_scenario_list,
+                           "data/Bonn","Bonn_hist_chill_305_59")
+
+# Store the years (1980, 1990, 2000, 2010) in a character vector
+scenarios <- names(chill_hist_scenario_list)[1:4]
+
+# Combine all scenarios into one dataset, with a new column scenario for year
+all_scenarios <- chill_hist_scenario_list[[scenarios[1]]] %>%
+  mutate(scenario = as.numeric(scenarios[1]))
+
+# Repeat with loop for the remaining scenarios and bind to all_scenarios
+for (sc in scenarios[2:4])
+ all_scenarios <- all_scenarios %>%
+  rbind(chill_hist_scenario_list[[sc]] %>%
+          cbind(
+            scenario=as.numeric(sc))
+        ) %>%
+  filter(Perc_complete == 100)
+
+# Let's compute the actual 'observed' chill for comparison
+actual_chill <- tempResponse_daily_list(Bonn_temps,
+                                        latitude=50.9,
+                                        Start_JDay = 305,
+                                        End_JDay = 59,
+                                        models)[[1]] %>%
+  filter(Perc_complete == 100)
+
+ggplot(data = all_scenarios,
+       aes(scenario,
+           Chill_Portions,
+           fill = factor(scenario))) +
+  geom_violin() +
+  ylab("Chill accumulation (Chill Portions)") +
+  xlab("Scenario year") +
+  theme_bw(base_size = 15) +
+  ylim(c(0,90)) +
+  geom_point(data = actual_chill,
+             aes(End_year,
+                 Chill_Portions,
+                 fill = "blue"),
+             col = "blue",
+             show.legend = FALSE) +
+  scale_fill_discrete(name = "Scenario",
+                      breaks = unique(all_scenarios$scenario)) 
+
+```
 
 
 
