@@ -8331,7 +8331,7 @@ P-hacking, a practice known as a fishing expedition, is to purposely look for an
 
 - The following image shows two distinct reflectance profiles that represent healthy (0% damage) and heavily affected (90% damage) leaves. As you can see, the healthy leaves reflected less light at wavelengths around 500 nm and more light in a wide region around 1000 nm. We can easily see that here, but there are also mathematical procedures for detecting the signals caused by a particular property of the material (in this case mite damage).
 
-![*** Spectral reflectance profiles of all healthy and all heavily mite-affected peach leaves and canopies (0% and 90% of the leaf area damaged for the leaf dataset, and damage classes 0–1 and 4–5 for the canopies). The gray areas around the curves indicate ± one standard error of the mean. Left: Hyperspectral reflectance spectra of healthy (0% damage) and highly mite-affected (90% damage) peach leaves in California. The lines show the averages, the shading illustrates the standard error of the mean (Luedeling et al., 2009c)***](./pic/ch21_1.jpg)
+![***Spectral reflectance profiles of all healthy and all heavily mite-affected peach leaves and canopies (0% and 90% of the leaf area damaged for the leaf dataset, and damage classes 0–1 and 4–5 for the canopies). The gray areas around the curves indicate ± one standard error of the mean. Left: Hyperspectral reflectance spectra of healthy (0% damage) and highly mite-affected (90% damage) peach leaves in California. The lines show the averages, the shading illustrates the standard error of the mean (Luedeling et al., 2009c)***](./pic/ch21_1.jpg)
 
 <br>
 
@@ -8498,9 +8498,19 @@ plot_PLS(PLS_output,
 # so, i get an empty folder every time I run this. And the function doesn't 
 # run if I delete the path. So, I guess I have to live with an empty folder here.
 
-grid.raster(readPNG("data/OT/PLS_output/PLS_output.png")) 
-grid.text("Temperature response pattern of‘Alexander\nLucas' pears in Klein-Altendorf,as determined\nby PLS regression and plotted with the\nstandard function in chillR", 
-          x = 0.88, y = 0.15, gp = gpar(fontsize = 10, fontface = "italic"))
+# grid.raster(readPNG("data/OT/PLS_output/PLS_output.png")) 
+# grid.text("Temperature response pattern of\n‘Alexander Lucas' pears in Klein-Altendorf", 
+#           x = 0.9, y = 0.15, gp = gpar(fontsize = 10, fontface = "italic"))
+
+img <- readPNG("data/OT/PLS_output/PLS_output.png")
+ggplot() +
+  annotation_custom(rasterGrob(img, width=unit(1,"npc"), height=unit(1,"npc"))) +
+  ggtitle("Temperature response pattern of ‘Alexander Lucas' pears in Klein-Altendorf") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+
+
+
 
 ```
 
@@ -8753,19 +8763,50 @@ ggplot_PLS(PLS_results)
 
 ***1. Briefly explain why you shouldn’t take the results of a PLS regression analysis between temperature and phenology at face value. What do you need in addition in order to make sense of such outputs?***
 
+PLS regression is usually used for large datasets. However, in phenology analysis, dataset can be rather small. For example, in the case of bloom dates for temperate fruit trees, there is only one bloom date per year, compared to high-resolution temperature data. Although the PLS method also works with limited data, the results will be less reliable and should not be taken at face value. Several reasons can contribute to this:
 
+- There are very few observations to correlate a dependent variable with many possible independent variables.
 
+- PLS only finds pattern within the dataset, which may or may not be meaningful&mdash; correlation does not mean causation.
 
-trying to relate high-resolution temperature to tree phenology. We have one dependent variable, just a few observations and lots of independent variables.
+- A risk of overfitting where the model captures noise than meaningful trends. 
 
+- Phenological variables may not response consistently to temperature as other environmental variables may also have impacts. 
+
+In order to make sense of such outputs, we need to have a prior theory or assumptions about how the system works. We can then run the analyses to check if the outputs support or contradict our theory. This practice will help prevent 'rationalizing'&mdash; a tendency to impose meaning on random patterns to make them appear reasonable. 
 
 <br>
 
 ***2. Replicate the PLS analysis for the Roter Boskoop dataset that you used in a previous lesson.***
 
-```{r 21.6}
+```{r 21.6.2}
 
 
+# Create a data.frame with two columns: Year (Pheno_year) and pheno (JDay)
+Roter_first <- read_tab("data/OT/Roter_Boskoop_bloom_1958_2019.csv") %>%
+  select(Pheno_year, First_bloom) %>%
+  mutate(Year = as.numeric(substr(First_bloom, 1, 4)),
+         Month = as.numeric(substr(First_bloom, 5, 6)), 
+         Day = as.numeric(substr(First_bloom, 7, 8))) %>% 
+  make_JDay() %>% 
+  select(Pheno_year, JDay) %>% 
+  rename(Year = Pheno_year,
+         pheno = JDay)
+
+
+# Recall temperature data to be used as weather data
+KA_temps <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv") %>%
+  make_JDay()
+
+# Run PLS
+PLS_roter_results <- PLS_pheno(KA_temps, # weather data
+                         Roter_first) # bio data
+
+kable(head(PLS_roter_results$PLS_summary)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Plot PLS using function for ggplot
+ggplot_PLS(PLS_roter_results)
 
 ```
 
@@ -8774,11 +8815,1449 @@ trying to relate high-resolution temperature to tree phenology. We have one depe
 
 ***3. Write down your thoughts on why we’re not seeing the temperature response pattern we may have expected. What happened to the chill response?***
 
+It seems the answer is in the next chapter, but I will answer it based on this chapter, because this is a question for this chapter. 
+
+I can think of two possible reasons:
+
+1. PLS method is not suitable for this analysis
+
+2. There is actually no correlation observed&mdash; maybe the trees don't need chilling phase?
+
+
+
+
+
 
 <br>
 
+## Chapter 22: Successes and limitations of PLS regression analysis
+
+### <span style="color:#71797E">22.1</span>&nbsp; PLS regression
+
+<div style="height: 18px;"></div>
+
+- In the context of phenology analysis, we can use the PLS regression method to correlate high-resolution temperature data (e.g. daily data) with low-resolution (annual) data on the timing of phenology events. 
+
+- In the case of pears at Klein-Altendorf we were only really able to recognize the forcing period (where warm conditions advance bloom), while the chilling phase remained obscure.
+
+- This was a bit disappointing, because the two dormancy phases had emerged quite clearly in the study on walnut leaf emergence in California.
+
+- Let’s look at a few more examples to understand where and when this works&mdash; and to try to figure out why.
+
+<br>
+
+### <span style="color:#71797E">22.2</span>&nbsp; PLS examples
+
+#### <span style="color:#71797E">22.2.1</span>&nbsp; Grasslands on the Tibetan Plateau
+
+<div style="height: 18px;"></div>
+
+- We looked at how the beginning of the growing season has responded to climate change on the grasslands of the Tibetan Plateau. 
+
+- When we just look at the trend over time, the pattern that emerges is rather confusing, with a fairly clear advancing trend until the late 1990s, followed by a surprising delay in ‘green up’ dates.
 
 
+![***Beginning of the growing season (BGS) for steppe (A) and meadow (B) vegetation on the Tibetan Plateau between 1982 and 2006, derived from 15-day NDVI composites obtained from the Advanced Very High Resolution Radiometer (AVHRR) sensor. BGS dates advanced markedly between 1982 and the mid 1990s, before retreating significantly after that. Consistent increases in temperature (C and D) indicate that observed changes are not linear responses to temperature. Lines in the graph represent 3-year running means ([Yu et al., 2010](https://www.pnas.org/doi/pdf/10.1073/pnas.1012490107))***](./pic/ch22_1.png)
+
+<br>
+
+- Similar to what we found for walnuts in California, we detected a conspicuous relationship between warm temperatures in winter and delayed beginning of the growing season in spring.
+
+
+![***Response of the BGS (A–D) in steppe and meadow vegetation of the Tibetan Plateau between 1982 and 2006 to monthly temperatures, according to PLS regression. The variable importance plots (VIP; C and D) indicate that temperatures in both spring (May and June) and winter (October through March) were important for explaining the response of BGS dates (VIP values above 0.8). Model coefficients (MC) of the centered and scaled data showed that warm winter temperatures delayed spring phenology (positive coefficients), whereas warm spring temperatures advanced the BGS (negative coefficients) for both steppe (A) and meadow (B). Including both effects into phenological models could substantially enhance our understanding of climate-change effects on vegetation at temperate and cold locations ([Yu et al., 2010](https://www.pnas.org/doi/pdf/10.1073/pnas.1012490107))***](./pic/ch22_2.png)
+
+<br>
+
+- We later added a spatial component to this analysis, investigating vegetation responses to temperature on a pixel-by-pixel basis.
+
+![***Correlations of monthly temperatures (left) and precipitation (right) with the beginning of the growing season (BGS) on the Tibetan Plateau, according to Partial Least Squares (PLS) regression. For each variable, pixels for which the variable-importance-in-the-projection score was <0.8 are shown in gray. Pixels with insufficient data for PLS analysis are shown in white ([Yu et al., 2012](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0049230))***](./pic/ch22_3.png)
+
+<br>
+
+- In principle, the temperature response pattern of grasslands is thus similar to what we’ve seen for walnuts in California, but the mechanisms at work here are probably quite different, so we should not jump to conclusions here without adequate knowledge of grassland ecology. 
+
+- These findings are concerning, because our initial expectation would probably have been that increasing temperature allows vegetation to get going earlier in the year. Failure of the vegetation to keep up with increasingly available thermal resources indicates a possible mismatch of the established ecosystems with future climatic conditions.
+
+- Such a mismatch is usually not sustainable, and it may open opportunities for invasive species that are better able to exploit the climatic ‘resources’ that will be available in the future.
+
+<br>
+
+#### <span style="color:#71797E">22.2.2</span>&nbsp; Deciduous trees
+
+<div style="height: 18px;"></div>
+
+- In his first analysis, Guo Liang looked at the phenology of Chinese chestnuts [(*Castanea mollissima*)](https://en.wikipedia.org/wiki/Castanea_mollissima)grown in Beijing, China. 
+
+- Once again, we can quite clearly see the forcing period - the long period of consistent negative model coefficients from January to May. The chilling period is also somewhat visible, but model coefficients are much less consistent, with many ‘unimportant’ values and even some interruptions.
+
+![***Results of Partial Least Squares (PLS) regression correlating first flowering dates for chestnut at Beijing Summer Palace with 11-day running means of daily mean temperatures from the previous July to June. Blue bars in the top panel indicate VIP values greater than 0.8, the threshold for variable importance. In the middle and bottom panels, red color means the model coefficients are negative (and important), while the green color indicates positive (and important) relationships between flowering and temperature. The black line in the bottom figure stands for the mean temperatures, while the gray, green and red areas represent the standard deviation of daily mean temperatures for each day of the year ([Guo et al., 2013](https://www.sciencedirect.com/science/article/pii/S0168192313001627))***](./pic/ch22_4.jpg)
+
+<br>
+
+- A similar analysis of cherry phenology from Campus Klein-Altendorf produced quite similar results. We see the pronounced forcing phase, which follows a chilling period that is difficult to delineate.
+
+![***Results of Partial Least Squares (PLS) regression of bloom dates for cv. ‘Schneiders späte Knorpelkirsche’ cherries in Klein-Altendorf, Germany, with 11-day running means of daily mean temperatures. The top panel shows Variable Importance in the Projection (VIP) scores, the middle panel model coefficients of the centered and scaled data, and the bottom panel mean temperatures (black line) and their standard deviation (grey areas). Blue bars in the top panel indicate values above 0.8, the threshold for variable importance. In the middle and bottom figures, data for these dates is shown in red whenever model coefficients are negative, and green when they are positive ([Luedeling et al., 2013b](https://link.springer.com/article/10.1007/s00484-012-0594-y))***](./pic/ch22_5.webp)
+
+<br>
+
+- A common pattern that emerges here is that the forcing phase is clearly visible, while the chilling phase is hard to see. This is disappointing after the very clear pattern we found earlier in California:
+
+![***Results of a PLS analysis relating leaf emergence dates of ‘Payne’ walnuts in California to mean daily temperature***](./pic/ch22_6.png)
+
+<br>
+
+#### <span style="color:#71797E">22.2.3</span>&nbsp; Why we’re not seeing the chilling phase
+
+<div style="height: 18px;"></div>
+
+- In the spider mite example, PLS regression was sensitive to the quantity of reflected radiation that reached the sensor, with greater reflectance at certain wavelengths and lower reflectance at other wavelengths indicating mite damage severity.
+
+- In detecting the forcing phase, PLS responded to temperature, with higher temperatures indicating greater heat accumulation, which was in turn related to early bloom.
+
+- In all of these cases, changes in the response variable were monotonically related to changes in the signal, i.e. the greater the signal, the greater/smaller the response. 
+
+- Let’s look at the temperature ranges that the chill models respond to and compare this to the temperature range that we can observe at the three study locations during the winter months.
+
+- To determine the range of effective temperatures for the various chill models we’ve already worked with, let’s see how much chill they produce at various levels of constant temperatures (chill days is omitted here, because this model doesn’t work with constant temperatures):
+
+```{r 22.2.3a}
+
+# library(chillR)
+# library(dormancyR)
+# library(ggplot2)
+# library(kableExtra)
+# library(patchwork)
+
+# List the hourly models to use for chill calculations
+hourly_models <- 
+  list(
+    Chilling_units = chilling_units,
+    Low_chill = low_chill_model,
+    Modified_Utah = modified_utah_model,
+    North_Carolina = north_carolina_model,
+    Positive_Utah = positive_utah_model,
+    Chilling_Hours = Chilling_Hours,
+    Utah_Chill_Units = Utah_Model,
+    Chill_Portions = Dynamic_Model)
+
+# List the daily models to calculate daily chill requirements
+daily_models <-
+  list(
+    Rate_of_Chill = rate_of_chill, 
+    Exponential_Chill = exponential_chill,
+    Triangular_Chill_Haninnen = triangular_chill_1,
+    Triangular_Chill_Legave = triangular_chill_2)
+
+# Combine both into a vector
+metrics <- c(names(daily_models),
+             names(hourly_models))
+
+# Give model labels for plotting
+model_labels <- c("Rate of Chill",
+                  "Exponential Chill",
+                  "Triangular Chill (Häninnen)",
+                  "Triangular Chill (Legave)",
+                  "Chilling Units",
+                  "Low-Chill Chill Units",
+                  "Modified Utah Chill Units",
+                  "North Carolina Chill Units",
+                  "Positive Utah Chill Units",
+                  "Chilling Hours",
+                  "Utah Chill Units",
+                  "Chill Portions")
+
+
+# Create a function to calculate 
+for(T in -20:30)
+ {
+  hourly <- sapply( hourly_models,
+                    function(x) # hourly models
+                      x(rep(T,1000)) # 51 x 1000 -> 51000 outputs
+                    )[1000,] # take only 1000th row (end of a cycle run???)
+ 
+  # Just to create a data frame- same values for all columns
+  temp_frame <- data.frame(Tmin = rep(T,1000),
+                           Tmax = rep(T,1000),
+                           Tmean = rep(T,1000))
+  
+  
+  daily <- sapply( daily_models,
+                   function(x) 
+                     x(temp_frame)
+                   )[1000,]
+# When T is -20 the sensitivity is created (the start) and then bind the rest to it
+  if(T == -20)
+    sensitivity <- c(T = T,
+                     daily,
+                     hourly) else   
+      sensitivity <- rbind(sensitivity,
+                           c(T = T,
+                             daily,
+                             hourly))
+  }
+
+sensitivity_normal <- 
+  as.data.frame(cbind(sensitivity[,1],
+                      sapply(2:ncol(sensitivity),
+                             function(x)
+                               sensitivity[,x]/max(sensitivity[,x]))))
+
+colnames(sensitivity_normal) <- colnames(sensitivity)
+
+sensitivity_gg <- 
+  sensitivity_normal %>%
+  pivot_longer(Rate_of_Chill:Chill_Portions)
+  
+ # melt(sensitivity_normal,id.vars="T")
+sensitivity_gg$value[sensitivity_gg$value<=0.001] <- NA
+
+
+chill<-
+  ggplot(sensitivity_gg,
+         aes(x = T,
+             y = factor(name),
+             size = value)) +
+  geom_point(col = "light blue") +
+  scale_y_discrete(labels = model_labels) +
+  ylab("Chill model") +
+  xlab("Temperature (assumed constant, °C)") +
+  xlim(c(-30, 40)) +
+  theme_bw(base_size = 15) +
+  labs(size = "Chill \nWeight")
+
+chill
+
+```
+
+<br>
+
+- Now let’s summarize winter temperatures at the three locations for which we’ve seen phenology responses above: Klein-Altendorf (Germany), Beijing (China) and Davis (California).
+
+```{r 22.2.3b}
+
+KA_temps <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv") %>%
+  make_JDay() %>%
+  filter(JDay > 305 | JDay < 90) %>%
+  stack_hourly_temps(latitude = 50.6)
+
+
+hh_KA <- hist(KA_temps$hourtemps$Temp,
+              breaks = c(-30:30),
+              plot=FALSE)
+
+hh_KA_df <- data.frame(
+  T = hh_KA$mids,
+  name = "Klein-Altendorf, Germany",
+  value = hh_KA$counts / max(hh_KA$counts))
+
+hh_KA_df$value[hh_KA_df$value == 0] <- NA
+
+
+Beijing_temps <- read_tab("data/OT/Beijing_weather.csv") %>%
+  make_JDay() %>%
+  filter(JDay > 305 | JDay < 90) %>%
+  stack_hourly_temps(latitude = 39.9)
+
+hh_Beijing <- hist(Beijing_temps$hourtemps$Temp,
+                   breaks = c(-30:30),
+                   plot=FALSE)
+
+hh_Beijing_df<-data.frame(
+  T = hh_Beijing$mids,
+  name = "Beijing, China",
+  value = hh_Beijing$counts / max(hh_Beijing$counts))
+
+hh_Beijing_df$value[hh_Beijing_df$value==0]<-NA
+
+
+Davis_temps <- read_tab("data/OT/Davis_weather.csv") %>%
+  make_JDay() %>%
+  filter(JDay > 305 | JDay < 90) %>%
+  stack_hourly_temps(latitude = 38.5)
+
+
+hh_Davis <- hist(Davis_temps$hourtemps$Temp,
+              breaks = c(-30:40),
+              plot=FALSE)
+
+hh_Davis_df <- data.frame(
+  T = hh_Davis$mids,
+  name = "Davis, California",
+  value = hh_Davis$counts / max(hh_Davis$counts))
+
+hh_Davis_df$value[hh_Davis_df$value == 0] <- NA
+
+
+hh_df<-rbind(hh_KA_df,
+             hh_Beijing_df,
+             hh_Davis_df)
+
+locations<-
+  ggplot(data = hh_df,
+         aes(x = T,
+             y = name,
+             size = value)) +
+  geom_point(col = "coral2") +
+  ylab("Location") +
+  xlab("Temperature (between November and March, °C)") + 
+  xlim(c(-30, 40)) +
+  theme_bw(base_size = 15) +
+  labs(size = "Relative \nfrequency")
+
+locations
+
+# To compare the plots, let’s combine them in one figure (using the patchwork package):
+  plot <- (chill +
+             locations +
+             plot_layout(guides = "collect",
+                         heights = c(1, 0.4))
+           ) & theme(legend.position = "right",
+                     legend.text = element_text(size = 10),
+                     legend.title = element_text(size = 12))
+
+plot
+
+```
+
+<br>
+
+- We already realized earlier that some of these models are probably pretty poor. So let’s simplify by only plotting chill according to the Dynamic Model:
+
+```{r 22.2.3c}
+
+chill <-
+  ggplot(sensitivity_gg %>%
+           filter(name == "Chill_Portions"),
+         aes(x = T,
+             y = factor(name),
+             size=value)) +
+  geom_point(col = "light blue") +
+  scale_y_discrete(labels = "Chill Portions") +
+  ylab("Chill model") +
+  xlab("Temperature (assumed constant, °C)") +
+  xlim(c(-30, 40)) +
+  theme_bw(base_size = 15) +
+  labs(size = "Chill \nWeight")
+
+  plot<- (chill +
+            locations +
+            plot_layout(guides = "collect",
+                        heights = c(0.5,1))
+        ) & theme(legend.position = "right",
+                  legend.text = element_text(size = 10),
+                  legend.title = element_text(size = 12))
+
+plot
+
+```
+
+<br>
+
+- If we compare the effective chill ranges with winter temperatures at the three locations, we can see that in Klein-Altendorf and Beijing, temperatures are quite often cooler than the effective temperature range for chill accumulation.
+
+- At Davis, this is rarely the case. Temperatures that are too warm for chill accumulation occur quite frequently at Davis, and occasionally at the other two locations. This means that at Davis, it is reasonable to expect that warm temperatures in winter reduce chill accumulation.
+
+- In the other two locations, this is not always the case. When it is relatively cold, warming may actually increase chill. When temperatures are relatively high, however, chill accumulation would be reduced by warming.
+
+- At these two locations, there is thus no monotonic relationship between temperature and chill accumulation. In such a setting, we shouldn’t expect PLS regression to produce clear results.
+
+<br>
+
+### <span style="color:#71797E">22.3</span>&nbsp; Exercises on chill model comparison
+
+<div style="height: 18px;"></div>
+
+***1. Briefly explain in what climatic settings we can expect PLS regression to detect the chilling phase&mdash; and in what settings this probably won’t work.***
+
+We can expect PLS regression to detect the chilling phase in relatively warmer climate where the temperature and chill accumulation have a monotonic relationship&mdash; warmer temperature during the chilling phase consistently reduces chill accumulation. 
+
+This probably won't work in colder climate where the temperature and chill accumulation do not have a monotonic relationship, i.e. when temperatures fall below the effective chill portions range, warmer temperatures may actually contribute to better chill accumulation, while temperatures exceeding the effective chill temperature range can reduce chill accumulation.
+
+
+<br>
+
+***2. How could we overcome this problem?***
+
+The answer to this question is in the next chapter but I have not read the next chapter yet, so I will answer based on the information given in this chapter.
+
+In the examples of Beijing and Campus Klein-Altendorf, PLS regression was used to correlate the daily mean temperatures with first flowering dates. As pointed out in the lecture, the PLS could not capture chilling phase in these two colder regions, because a monotonic relationship between temperature and flowering response was not observed. When an increase in temperature can contribute to both advanced and delayed flowering response,the PLS will consider this inconsistent trend as no significant correlation&mdash; that's why we cannot observe a proper chilling phase in the two examples. 
+
+To overcome this problem, we need a new independent variable other than temperature. 
+
+So, instead of correlating like this:
+
+$$Temperature \rightarrow First~flowering~date$$
+
+What if we draw the correlation like this:
+
+$$Temperature \rightarrow Chill~hour \rightarrow First~flowering~date$$
+Daily chill hours will have monotonic relationship with the flowering response *(What about excess chill hours? Can that be a problem too, as in normally more chill accumulation during chilling phase leads to earlier bloom date but too much chill accumulation leads to delayed bloom date? Will it still be monotonic if the chill portions/hours exceed the effective range or amount&mdash; can extremely low temperature delay bloom and should we consider this as well? Or this is not a problem at all because of the trend of warmer temperatures- global warming?)*. Therefore, the PLS would be able to identify a correlation, if one exists. Maybe we can calculate daily chill hours from the hourly temperature record and the effective chill temperature range of the location. Then, we can correlate chill hours with the first flowering dates&mdash; the PLS method can then detect the chilling phase. 
+
+<br>
+
+## Chapter 23: PLS regression with agroclimatic metrics
+
+### <span style="color:#71797E">23.1</span>&nbsp; Adjusting PLS for use with non-monotonic relationships 
+
+<div style="height: 18px;"></div>
+
+- The most likely reason why PLS regression failed to pick up the chilling period in relatively cold locations is that there is no monotonic relationship between temperature and chill effectiveness, i.e. warmer temperatures may either lead to less chill (when it’s fairly warm) or more chill (when it’s cold). 
+
+- To overcome this problem, we need to convert temperature into something that is monotonically related to chill accumulation, maybe by making use of the chill models. 
+
+- If PLS holds its promise to identify chilling periods, it should be responsive to the daily rate of chill accumulation. 
+
+- This brings us back to an old problem&mdash; we don’t really know how to quantify chill accumulation accurately, and we don’t really trust the models we have. But, let's swallow this concerns for now.
+
+- ***We’ll be converting temperature data to chill (and heat) accumulation to run PLS analyses. This strategy assumes that the respective chill and heat models are reasonable approximations of the underlying biology.***
+
+<br>
+
+### <span style="color:#71797E">23.2</span>&nbsp; PLS analysis with chilling and forcing data
+
+<div style="height: 18px;"></div>
+
+- The `chillR` package has a function called `PLS_chill_force` that implements PLS analysis based on daily chill and heat accumulation rates.
+
+- When you look at the documentation of the `PLS_chill_force` function (e.g. by typing `?PLS_chill_force`), you’ll see that this function requires a daily chill object (`daily_chill_obj`) as an input. This object contains daily chill and heat accumulation rates, as well as mean temperature data. (More info in documentation of `daily_chill`)
+
+- Let's test on the first bloom dates of ‘Alexander Lucas’ pears in Klein-Altendorf. So we’ll start by applying the `daily_chill` function to produce such a daily chill object. We’ll also use a standard function in `chillR` (`make_daily_chill_plot2`) to plot daily chill accumulation:
+
+```{r 23.2a}
+
+#library(chillR)
+
+# daily_chill function calculates calculates daily chill (with three models) 
+# and heat accumulation for every day of an hourly temperature record 
+# (best generated with stack_hourly_temps)
+
+# It includes the option to include calculation of a running mean, which smoothes 
+# accumulation curves. Especially for the Dynamic Model, this may be advisable, 
+# because it does not accumulate chill smoothly, but rather in steps.
+
+# Generate an hourly temperature record
+temps_hourly <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv") %>%
+  stack_hourly_temps(latitude = 50.6)
+
+kable(head(temps_hourly$hourtemps)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Apply the daily_chill function
+daychill <- daily_chill(hourtemps = temps_hourly,
+                        running_mean = 1, # 1 (default) for no smoothing
+                        models = list(
+                          Chilling_Hours = Chilling_Hours,
+                          Utah_Chill_Units = Utah_Model,
+                          Chill_Portions = Dynamic_Model,
+                          GDH = GDH)
+                        )
+
+kable(head(daychill$daily_chill)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# Plot daily chill accumulation
+dc <- make_daily_chill_plot2(daychill,
+                             metrics = c("Chill_Portions"),
+                             cumulative = FALSE, # show daily accumulation rates
+                             startdate = 300,
+                             enddate = 30,
+                             focusyears = c(2008), # highlight specific year
+                             metriclabels = "Chill Portions")
+
+```
+
+<br>
+
+- We can also switch to cumulative view to illustrate how chill accumulation in a particular year differs from historic accumulation patterns.
+
+```{r 23.2b}
+
+dc <- make_daily_chill_plot2(daychill,
+                             metrics = c("Chill_Portions"),
+                             cumulative = TRUE, # show as cumulative accumulation
+                             startdate = 300,
+                             enddate = 30,
+                             focusyears = c(2008),
+                             metriclabels = "Chill Portions")
+
+```
+
+<br>
+
+- One special feature in this plot are the double ticks on the x-axis. These account for the additional day (29^th^ February) that is added to the year in leap years. These leap days make Julian dates not map to precisely the same calendar dates in each year. The double ticks are an attempt to do justice to this ambiguity.
+
+- We can now feed this daily chill object to the `PLS_chill_force` function. We’ll also need the pear bloom data again:
+
+```{r 23.2c}
+
+# Create a data.frame with year and JDay of first bloom date
+# This is a required format for PLS_chill_force function
+Alex_first <- read_tab("data/OT/Alexander_Lucas_bloom_1958_2019.csv") %>%
+  select(Pheno_year, First_bloom) %>%
+  mutate(Year = as.numeric(substr(First_bloom, 1, 4)),
+         Month = as.numeric(substr(First_bloom, 5, 6)),
+         Day = as.numeric(substr(First_bloom, 7, 8))) %>%
+  make_JDay() %>%
+  select(Pheno_year, 
+         JDay) %>%
+  rename(Year = Pheno_year,
+         pheno = JDay)
+
+# PLS_chill_force function conducts a Partial Least Squares (PLS) regression 
+# analysis relating an annual biological phenomenon, e.g. fruit tree flowering 
+# or leaf emergence, to mean daily rates of chill (with three models) and heat 
+# accumulation of the preceding 12 months. It produces figures that illustrate 
+# statistical correlations between temperature variation during certain phases 
+# and the timing of phenological events.
+
+plscf <- PLS_chill_force(daily_chill_obj = daychill, #generate with daily_chill
+                         bio_data_frame = Alex_first,#Year and Pheno format only
+                         split_month = 6,#last month for a given phenological year
+                         chill_models = "Chill_Portions",
+                         heat_models = "GDH")
+
+kable(head(plscf$Chill_Portions$GDH$PLS_summary)) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+# We could have specified multiple chill and heat models, and the function would
+# have evaluated all combinations of these models. This is why, to find the 
+# results, we have to look at plscf$Chill_Portions$GDH$PLS_summary
+
+# Plot the results with the inbuilt function plot_PLS, which is a fairly old
+# function that writes an image in a place you can specify.
+# This gives output in png and csv file.
+plot_PLS(plscf,
+         PLS_results_path = "data/OT/plscf_outputs") 
+
+# Call the generated result image
+grid.raster(readPNG("data/OT/plscf_outputs_Chill_Portions_GDH.png"))
+
+```
+
+<br>
+
+- The results don’t look very clear quite yet. To a considerable extent, this is because we didn’t use a running mean to smooth the chill and heat data. Especially for the Dynamic Model, this is worth considering, because Chill Portions accumulate in a stepwise manner, rather than continuously. Such steps aren’t reached every day, which adds a random element to estimations of daily rates. 
+
+- Let’s apply an 11-day running mean and plot the results again:
+
+```{r 23.2d}
+
+plscf <- PLS_chill_force(daily_chill_obj = daychill,
+                         bio_data_frame=Alex_first,
+                         split_month = 6,
+                         chill_models = "Chill_Portions",
+                         heat_models = "GDH",
+                         runn_means = 11)
+
+plot_PLS(plscf,
+         PLS_results_path = "data/OT/plscf_outputs_11days")
+
+grid.raster(readPNG("data/OT/plscf_outputs_11days_Chill_Portions_GDH.png"))
+```
+
+<br>
+
+- This looks a lot clearer now. We see two plots here, with the one on the left showing the relationship between bloom dates and chill accumulation, and the one on the right showing the same for heat accumulation. 
+
+- Note that these are plotted in different panels, but they emerged from the same PLS analysis, which thus related bloom dates to a total of 730 independent variables&mdash; chill and heat accumulation dates for each calendar day (if you set `end_at_pheno_end = TRUE`, minus all days after the latest bloom date).
+
+- To find the chilling and forcing periods, we should now look for consistent periods of negative model coefficients on both sides of the figure. For the chilling period, we’ll look on the left, where the relationship of bloom dates with daily chill accumulation rates is shown, and for the forcing period, we’ll look right, where the same is shown for daily heat accumulation rates.
+
+- Again, the forcing period is easier to see than the chilling phase. It’s approximately between early January and the bloom date (between mid-March and early May). 
+
+- The chilling period is still a bit hard to see, but we can now detect a phase between some point in November or early December and February where high chill accumulation rates are correlated with early bloom.
+
+- In these delineations, I recommend to not focus too narrowly on ‘important’ values, but rather take a broad perspective in evaluating model coefficient dynamics.
+
+- Always remember that PLS regression with small datasets may struggle to distinguish signals from noise, with random effects easily creeping in. We also need to remember that our chill and heat models aren’t perfect and that they don’t actually include much knowledge on dormancy physiology.
+
+<br>
+
+### <span style="color:#71797E">23.3</span>&nbsp; Delineating chilling and forcing periods
+
+<div style="height: 18px;"></div>
+
+- The precise delineations of chilling and forcing periods are often a bit debatable, and there have often been slight disagreements about the precise dates to use.
+
+- I would recommend taking both the plot and the detailed results table into account in deciding when periods start and end. More importantly, consider what you know about tree dormancy! ***Never lose sight of the ecological theory behind your analysis when you evaluate the results.***
+
+- My call on the present dataset would be a chilling period between 13^th^ November and 3^rd^ March (Julian dates -48 to 62) and a forcing period between 3^rd^ January and the date of bloom (Julian dates 3 to 105.5, which represents the median of all bloom dates).
+
+```{r 23.3a}
+
+plot_PLS(plscf,
+         PLS_results_path = "data/OT/plscf_outputs_11days_periods",
+         add_chill = c(-48,62),
+         add_heat = c(3,105.5))
+
+# grid.raster(readPNG("data/OT/plscf_outputs_11days_periods_Chill_Portions_GDH.png"))
+
+```
+
+![***Plot of `PLS_chill_force` results, with our delineations of chilling (light blue) and forcing (light red) phases highlighted***](./data/OT/plscf_outputs_11days_periods_Chill_Portions_GDH.png)
+
+<br>
+
+### <span style="color:#71797E">23.4</span>&nbsp; `ggplot`ting the results
+
+<div style="height: 18px;"></div>
+
+- The only real change is that we need to split the results according to chill vs. heat analysis. We’ll use `facet_wrap` for this.
+
+
+```{r 23.4a}
+
+## First we need to prepare the data for `ggplot`ting:
+
+# Date chillR format date
+PLS_gg <- plscf$Chill_Portions$GDH$PLS_summary %>%
+  mutate(Month = trunc(Date/100), # round number towards 0
+         Day = Date - Month * 100,
+         Date = ISOdate(2002,
+                        Month,
+                        Day))
+
+# Change year to last year for JDay less than or equal to zero (-JDay)
+PLS_gg[PLS_gg$JDay <= 0,"Date"]<-
+  ISOdate(2001,
+          PLS_gg$Month[PLS_gg$JDay <= 0],
+          PLS_gg$Day[PLS_gg$JDay <= 0])
+
+# sign(Coef) gives a vector of 1, 0, -1, multiplied by VIP_importance (1 or 0). 
+# Then, use factor to keep it categorical. 
+# Add VIP_importance (TRUE, FALSE) and VIP_Coeff (1, -1, 0) columns.
+PLS_gg <- PLS_gg %>%
+  mutate(VIP_importance = VIP >= 0.8,
+         VIP_Coeff = factor(sign(Coef) * VIP_importance))
+
+# We decide this based on csv and graph outputs?
+chill_start_JDay <- -48
+chill_end_JDay <- 62
+heat_start_JDay <- 3
+heat_end_JDay <- 105.5
+
+
+# Convert JDay into Date (change JDay to seconds and then add)
+chill_start_date <- ISOdate(2001,
+                            12,
+                            31) + chill_start_JDay * 24 * 3600
+chill_end_date <- ISOdate(2001,
+                          12,
+                          31) + chill_end_JDay * 24 * 3600
+heat_start_date <- ISOdate(2001,
+                           12,
+                           31) + heat_start_JDay * 24 * 3600
+heat_end_date <- ISOdate(2001,
+                         12,
+                         31) + heat_end_JDay * 24 * 3600
+
+## This time we’ll start with the bottom plot, because that’s the most 
+## complicated one. It’s complicated, because we need to put different labels on
+## the y-axes of the two facets.
+
+## Since the daily chill accumulation rate is between 0 and ~1 Chill Portions, 
+## and the daily heat accumulation rate can reach 300 GDH and more, we also need 
+## different scales for the axes. 
+
+## We’ll start with the hardest plot, because the way we solve these problems 
+## may have implications for how we have to construct the other plots.
+
+#library(ggplot2)
+
+temp_plot <- ggplot(PLS_gg,
+                    x = Date) +
+  annotate("rect", # add shaded rectangular box
+           xmin = chill_start_date,
+           xmax = chill_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1, # transparency 10%
+           fill = "blue") +
+  annotate("rect",
+           xmin = heat_start_date,
+           xmax = heat_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "red") +
+  annotate("rect",
+           xmin = ISOdate(2001, # this gives earliest bloom date?
+                          12,
+                          31) +
+             min(plscf$pheno$pheno,
+                 na.rm = TRUE) * 24 * 3600,
+           xmax = ISOdate(2001, # latest bloom date?
+                          12,
+                          31) +
+             max(plscf$pheno$pheno,
+                 na.rm = TRUE) * 24 * 3600,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "black") +
+  geom_vline(xintercept = ISOdate(2001, # add median bloom date line
+                                  12,
+                                  31) +
+               median(plscf$pheno$pheno,
+                      na.rm = TRUE) * 24 * 3600,
+             linetype = "dashed") +
+  geom_ribbon(aes(x = Date, # add uncertainty
+                  ymin = MetricMean - MetricStdev ,
+                  ymax = MetricMean + MetricStdev),
+              fill="grey") +
+  geom_ribbon(aes(x = Date, # negative correlation then fill red?
+                  ymin = MetricMean - MetricStdev * (VIP_Coeff == -1),
+                  ymax = MetricMean + MetricStdev * (VIP_Coeff == -1)),
+              fill = "red") +
+  geom_ribbon(aes(x = Date,
+                  ymin = MetricMean - MetricStdev * (VIP_Coeff == 1),
+                  ymax = MetricMean + MetricStdev * (VIP_Coeff == 1)),
+              fill = "dark green") +
+  geom_line(aes(x = Date,
+                y = MetricMean ))
+
+temp_plot
+
+# Use the facet labels instead and moved them to the left side, using them as 
+# y-axis labels. The labeller element in facet_wrap can easily be customized 
+# with text of your choice. 
+temp_plot <- temp_plot +
+  facet_wrap(vars(Type), 
+             scales = "free_y", # free scales in y dimension
+             strip.position = "left",
+             labeller =
+               labeller(Type = as_labeller(
+               c(Chill = "Chill (CP)",
+                 Heat = "Heat (GDH)")))) +
+  ggtitle("Daily chill and heat accumulation rates") +
+  theme_bw(base_size = 15) + 
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text.y = element_text(size =12),
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_blank()
+        )
+
+temp_plot
+
+```
+
+<br>
+
+- Now use the same strategy to make the VIP and model coefficient plots (this is important, because the plots should have similar structures when we combine them later).
+
+- Create VIP plot:
+
+```{r 23.4b}
+
+VIP_plot<- ggplot(PLS_gg,
+                  aes(x = Date,
+                      y = VIP)) +
+  annotate("rect",
+           xmin = chill_start_date,
+           xmax = chill_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "blue") +
+  annotate("rect",
+           xmin = heat_start_date,
+           xmax = heat_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "red") +
+  annotate("rect",
+           xmin = ISOdate(2001,
+                          12,
+                          31) +
+             min(plscf$pheno$pheno,
+                 na.rm = TRUE) * 24 * 3600,
+           xmax = ISOdate(2001,
+                          12,
+                          31) +
+             max(plscf$pheno$pheno,
+                 na.rm = TRUE) * 24 * 3600,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "black") +
+  geom_vline(xintercept = ISOdate(2001,
+                                  12,
+                                  31) +
+               median(plscf$pheno$pheno,
+                      na.rm = TRUE) * 24 * 3600,
+             linetype = "dashed") +
+  geom_bar(stat = 'identity', # leave data unchanged
+           aes(fill = VIP > 0.8))
+
+VIP_plot
+
+# Split the VIP_plot by Type
+VIP_plot <- VIP_plot + 
+  facet_wrap(vars(Type),
+             scales = "free",
+             strip.position = "left",
+             labeller = 
+               labeller(Type = as_labeller(
+                 c(Chill = "VIP for chill",
+                   Heat = "VIP for heat")))) +
+  scale_y_continuous(
+    limits = c(0,
+               max(plscf$Chill_Portions$GDH$PLS_summary$VIP))) +
+  ggtitle("Variable Importance in the Projection (VIP) scores") +
+  theme_bw(base_size = 15) + 
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_blank()
+        )
+  
+VIP_plot
+
+# Change color to grey and blue
+VIP_plot <- VIP_plot +
+  scale_fill_manual(name = "VIP", 
+                    labels = c("<0.8", ">0.8"), 
+                    values = c("FALSE" = "grey",
+                               "TRUE" = "blue")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+
+VIP_plot
+
+```
+
+<br>
+
+_ Create model coefficient plots:
+
+```{r 23.4c}
+
+coeff_plot <- ggplot(PLS_gg,
+                     aes(x = Date,
+                         y = Coef)) +
+  annotate("rect",
+           xmin = chill_start_date,
+           xmax = chill_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "blue") +
+  annotate("rect",
+           xmin = heat_start_date,
+           xmax = heat_end_date,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "red") +
+  annotate("rect",
+           xmin = ISOdate(2001,
+                          12,
+                          31) +
+             min(plscf$pheno$pheno,
+                 na.rm=TRUE) * 24 * 3600,
+           xmax = ISOdate(2001,
+                          12,
+                          31) +
+             max(plscf$pheno$pheno,
+                 na.rm = TRUE) * 24 * 3600,
+           ymin = -Inf,
+           ymax = Inf,
+           alpha = .1,
+           fill = "black") +
+  geom_vline(xintercept = ISOdate(2001,
+                                  12,
+                                  31) +
+               median(plscf$pheno$pheno,
+                      na.rm = TRUE) * 24 * 3600,
+             linetype = "dashed") +
+  geom_bar(stat = 'identity',
+           aes(fill = VIP_Coeff))
+
+coeff_plot
+
+# Wrap by Type
+coeff_plot <- coeff_plot +
+  facet_wrap(vars(Type),
+             scales = "free",
+             strip.position = "left",
+             labeller =
+               labeller(
+                 Type = as_labeller(
+                   c(Chill = "MC for chill",
+                     Heat = "MC for heat")))) +
+  scale_y_continuous(
+    limits = c(min(plscf$Chill_Portions$GDH$PLS_summary$Coef),
+               max(plscf$Chill_Portions$GDH$PLS_summary$Coef))) +
+  ggtitle("Model coefficients (MC)") +
+  theme_bw(base_size = 15) + 
+  theme(strip.background = element_blank(),
+        strip.placement = "outside",
+        strip.text.y = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_blank()
+        )
+  
+coeff_plot 
+
+# Change colors and legends
+coeff_plot <- coeff_plot +  
+  scale_fill_manual(name="Effect direction", 
+                    labels = c("Advancing",
+                               "Unimportant",
+                               "Delaying"), 
+                    values = c("-1" = "red",
+                               "0" = "grey",
+                               "1" = "dark green")) +
+  ylab("PLS coefficient") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank())
+
+coeff_plot
+
+```
+
+<br>
+
+- Now it’s time to combine the plots. We’ll use the `patchwork` package again.
+
+```{r 23.4d}
+
+#library(patchwork)
+
+plot<- (VIP_plot +
+          coeff_plot +
+          temp_plot +
+          plot_layout(ncol = 1,
+            guides = "collect")
+        ) & theme(legend.position = "right",
+                  legend.text = element_text(size = 8),
+                  legend.title = element_text(size = 10),
+                  axis.title.x = element_blank())
+
+plot
+
+```
+
+<br>
+
+- Make a function for later use.
+
+```{r 23.4e}
+
+plot_PLS_chill_force <- function(plscf,
+                                 chill_metric = "Chill_Portions",
+                                 heat_metric = "GDH",
+                                 chill_label = "CP",
+                                 heat_label = "GDH",
+                                 chill_phase = c(-48, 62),
+                                 heat_phase = c(3, 105.5))
+{
+  PLS_gg <- plscf[[chill_metric]][[heat_metric]]$PLS_summary %>%
+    mutate(Month = trunc(Date/100),
+           Day = Date - Month * 100,
+           Date = ISOdate(2002,
+                          Month,
+                          Day))
+  
+  PLS_gg[PLS_gg$JDay <= 0,"Date"]<-
+    ISOdate(2001,
+            PLS_gg$Month[PLS_gg$JDay <= 0],
+            PLS_gg$Day[PLS_gg$JDay <= 0])
+  
+  PLS_gg <- PLS_gg %>%
+    mutate(VIP_importance = VIP >= 0.8,
+           VIP_Coeff = factor(sign(Coef) * VIP_importance))
+  
+  chill_start_date <- ISOdate(2001,
+                              12,
+                              31) + chill_phase[1] * 24 * 3600
+  chill_end_date <- ISOdate(2001,
+                            12,
+                            31) + chill_phase[2] * 24 * 3600
+  heat_start_date <- ISOdate(2001,
+                             12,
+                             31) + heat_phase[1] * 24 * 3600
+  heat_end_date <- ISOdate(2001,
+                           12,
+                           31) + heat_phase[2] * 24 * 3600
+
+  temp_plot <- ggplot(PLS_gg) +
+    annotate("rect",
+             xmin = chill_start_date,
+             xmax = chill_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "blue") +
+    annotate("rect",
+             xmin = heat_start_date,
+             xmax = heat_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "red") +
+    annotate("rect",
+             xmin = ISOdate(2001,
+                            12,
+                            31) +
+               min(plscf$pheno$pheno,
+                   na.rm = TRUE) * 24 * 3600,
+             xmax = ISOdate(2001,
+                            12,
+                            31) +
+               max(plscf$pheno$pheno,
+                   na.rm = TRUE) * 24 * 3600,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "black") +
+    geom_vline(xintercept = ISOdate(2001,
+                                    12,
+                                    31) +
+                 median(plscf$pheno$pheno,
+                        na.rm=TRUE) * 24 * 3600,
+               linetype = "dashed") +
+    geom_ribbon(aes(x = Date,
+                    ymin = MetricMean - MetricStdev ,
+                    ymax = MetricMean + MetricStdev ),
+                fill = "grey") +
+    geom_ribbon(aes(x = Date,
+                    ymin = MetricMean - MetricStdev * (VIP_Coeff == -1),
+                    ymax = MetricMean + MetricStdev * (VIP_Coeff == -1)),
+                fill = "red") +
+    geom_ribbon(aes(x = Date,
+                    ymin = MetricMean - MetricStdev * (VIP_Coeff == 1),
+                    ymax = MetricMean + MetricStdev * (VIP_Coeff == 1)),
+                fill = "dark green") +
+    geom_line(aes(x = Date,
+                  y = MetricMean)) +
+    facet_wrap(vars(Type),
+               scales = "free_y",
+               strip.position = "left",
+               labeller = 
+                 labeller(
+                   Type =
+                     as_labeller(c(Chill = paste0("Chill (",
+                                                  chill_label,
+                                                  ")"),
+                                   Heat = paste0("Heat (",
+                                                 heat_label,
+                                                 ")"))))) +
+    ggtitle("Daily chill and heat accumulation rates") +
+    theme_bw(base_size = 15) + 
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          strip.text.y = element_text(size = 12),
+          plot.title = element_text(hjust = 0.5),
+          axis.title.y = element_blank()
+          )
+  
+  VIP_plot <- ggplot(PLS_gg,
+                     aes(x = Date,
+                         y = VIP)) +
+    annotate("rect",
+             xmin = chill_start_date,
+             xmax = chill_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "blue") +
+    annotate("rect",
+             xmin = heat_start_date,
+             xmax = heat_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "red") +
+    annotate("rect",
+             xmin = ISOdate(2001,
+                            12,
+                            31) + min(plscf$pheno$pheno,
+                                      na.rm = TRUE) * 24 * 3600,
+             xmax = ISOdate(2001,
+                            12,
+                            31) + max(plscf$pheno$pheno,
+                                      na.rm = TRUE) * 24 * 3600,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "black") +
+    geom_vline(xintercept = ISOdate(2001,
+                                    12,
+                                    31) + median(plscf$pheno$pheno,
+                                                 na.rm = TRUE) * 24 * 3600,
+               linetype = "dashed") +
+    geom_bar(stat = 'identity',
+             aes(fill = VIP>0.8)) +
+    facet_wrap(vars(Type), 
+               scales = "free",
+               strip.position = "left",
+               labeller = 
+                 labeller(
+                   Type = as_labeller(c(Chill="VIP for chill",
+                                        Heat="VIP for heat")))) +
+    scale_y_continuous(
+      limits = c(0,
+                 max(plscf[[chill_metric]][[heat_metric]]$PLS_summary$VIP))) +
+    ggtitle("Variable Importance in the Projection (VIP) scores") +
+    theme_bw(base_size = 15) + 
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          strip.text.y = element_text(size = 12),
+          plot.title = element_text(hjust = 0.5),
+          axis.title.y = element_blank()
+          ) +
+    scale_fill_manual(name = "VIP", 
+                      labels = c("<0.8", ">0.8"), 
+                      values = c("FALSE" = "grey",
+                                 "TRUE" = "blue")) +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  
+  coeff_plot <- ggplot(PLS_gg,
+                       aes(x = Date,
+                           y = Coef)) +
+    annotate("rect",
+             xmin = chill_start_date,
+             xmax = chill_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "blue") +
+    annotate("rect",
+             xmin = heat_start_date,
+             xmax = heat_end_date,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "red") +
+    annotate("rect",
+             xmin = ISOdate(2001,
+                            12,
+                            31) + min(plscf$pheno$pheno,
+                                      na.rm = TRUE) * 24 * 3600,
+             xmax = ISOdate(2001,
+                            12,
+                            31) + max(plscf$pheno$pheno,
+                                      na.rm = TRUE) * 24 * 3600,
+             ymin = -Inf,
+             ymax = Inf,
+             alpha = .1,
+             fill = "black") +
+    geom_vline(xintercept = ISOdate(2001,
+                                    12,
+                                    31) + median(plscf$pheno$pheno,
+                                                 na.rm = TRUE) * 24 * 3600,
+               linetype = "dashed") +
+    geom_bar(stat = 'identity',
+             aes(fill = VIP_Coeff)) +
+    facet_wrap(vars(Type),
+               scales = "free",
+               strip.position = "left",
+               labeller =
+                 labeller(
+                   Type = as_labeller(c(Chill = "MC for chill",
+                                        Heat = "MC for heat")))) +
+    scale_y_continuous(
+      limits = c(min(plscf[[chill_metric]][[heat_metric]]$PLS_summary$Coef),
+                 max(plscf[[chill_metric]][[heat_metric]]$PLS_summary$Coef))) +
+    ggtitle("Model coefficients (MC)") +
+    theme_bw(base_size = 15) + 
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          strip.text.y = element_text(size = 12),
+          plot.title = element_text(hjust = 0.5),
+          axis.title.y = element_blank()
+          ) +
+    scale_fill_manual(name = "Effect direction", 
+                      labels = c("Advancing",
+                                 "Unimportant",
+                                 "Delaying"), 
+                      values = c("-1" = "red",
+                                 "0" = "grey",
+                                 "1" = "dark green")) +
+    ylab("PLS coefficient") +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  
+  library(patchwork)
+  
+  plot <- (VIP_plot +
+             coeff_plot +
+             temp_plot +
+             plot_layout(ncol = 1,
+                         guides = "collect")
+           ) & theme(legend.position = "right",
+                     legend.text = element_text(size = 8),
+                     legend.title = element_text(size = 10),
+                     axis.title.x = element_blank())
+
+plot
+
+}
+
+plot_PLS_chill_force(plscf)
+
+
+```
+
+<br>
+
+- Now that we’ve automated the plot production, we can easily look at how useful other chill models would be in delineating chilling and forcing periods.
+
+```{r 23.4f}
+
+daychill <- daily_chill(hourtemps = temps_hourly,
+                        running_mean = 11,
+                        models = list(Chilling_Hours = Chilling_Hours,
+                                      Utah_Chill_Units = Utah_Model,
+                                      Chill_Portions = Dynamic_Model,
+                                      GDH = GDH)
+                        )
+
+plscf <- PLS_chill_force(daily_chill_obj = daychill,
+                         bio_data_frame = Alex_first,
+                         split_month = 6,
+                         chill_models = c("Chilling_Hours",
+                                          "Utah_Chill_Units",
+                                          "Chill_Portions"),
+                       heat_models = c("GDH"))
+
+# Plot the Chilling Hours Model
+plot_PLS_chill_force(plscf,
+                     chill_metric = "Chilling_Hours",
+                     heat_metric = "GDH",
+                     chill_label = "CH",
+                     heat_label = "GDH",
+                     chill_phase = c(0,0),
+                     heat_phase = c(0,0)) # unspecified chill/heat period?
+
+# Plot the Utah Model
+plot_PLS_chill_force(plscf,
+                     chill_metric = "Utah_Chill_Units",
+                     heat_metric = "GDH",
+                     chill_label = "CU",
+                     heat_label = "GDH",
+                     chill_phase = c(0,0),
+                     heat_phase = c(0,0))
+
+```
+
+<br>
+
+- So the other two common models aren’t so great at picking up the chilling period either.
+
+<br>
+
+### <span style="color:#71797E">23.5</span>&nbsp; Exercises on chill model comparison
+
+<div style="height: 18px;"></div>
+
+***1. Repeat the `PLS_chill_force` procedure for the ‘Roter Boskoop’ dataset. Include plots of daily chill and heat accumulation.***
+
+I will use the `Chill_Portions` model to demonstrate:
+
+```{r 23.5.1}
+
+# Generate an hourly temperature record
+temps_hourly <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv") %>%
+  stack_hourly_temps(latitude = 50.6)#Roter Boskoop is also from Klein Altendorf
+
+# Create daily_chill object
+daychill <- daily_chill(hourtemps = temps_hourly,
+                        running_mean = 11, 
+                        models = list(
+                          Chilling_Hours = Chilling_Hours,
+                          Utah_Chill_Units = Utah_Model,
+                          Chill_Portions = Dynamic_Model,
+                          GDH = GDH)
+                        )
+
+# Change Roter Boskoop dataset into PLS_chill_force format
+Roter_first <- read_tab("data/OT/Roter_Boskoop_bloom_1958_2019.csv") %>%
+  select(Pheno_year, First_bloom) %>%
+  mutate(Year = as.numeric(substr(First_bloom, 1, 4)),
+         Month = as.numeric(substr(First_bloom, 5, 6)),
+         Day = as.numeric(substr(First_bloom, 7, 8))) %>%
+  make_JDay() %>%
+  select(Pheno_year, 
+         JDay) %>%
+  rename(Year = Pheno_year,
+         pheno = JDay)
+
+# Apply PLS_chill_force function
+Roter_plscf <- PLS_chill_force(daily_chill_obj = daychill,
+                         bio_data_frame = Roter_first,
+                         split_month = 6,
+                         chill_models = "Chill_Portions",
+                         heat_models = "GDH",
+                         runn_means = 11) #double runn_means make plot smoother
+
+# I use the plot_PLS function here to get the csv output
+plot_PLS(Roter_plscf,
+         PLS_results_path = "data/OT/Roter_plscf_outputs") 
+
+grid.raster(readPNG("data/OT/Roter_plscf_outputs_Chill_Portions_GDH.png"))
+```
+
+
+<br>
+
+***2. Run `PLS_chill_force` analyses for all three major chill models. Delineate your best estimates of chilling and forcing phases for all of them.***
+
+The three major chill models are `Chilling_Hours`, `Utah_Model` (`Chill_Units`) and `Chill_Portions` (`Dynamic_Model`). 
+
+**The `Chilling_Hours` Model:**
+
+```{r 23.5.2a}
+
+# For Chilling_Hours model
+Roter_plscf_ch <- PLS_chill_force(daily_chill_obj = daychill,
+                         bio_data_frame = Roter_first,
+                         split_month = 6,
+                         chill_models = "Chilling_Hours",
+                         heat_models = "GDH",
+                         runn_means = 11)
+
+plot_PLS(Roter_plscf_ch,
+         PLS_results_path = "data/OT/Roter_plscf_outputs") 
+
+```
+
+![***The Chilling_Hours Model***](./data/OT/Roter_plscf_outputs_Chilling_Hours_GDH.png)
+
+<br>
+
+**The `Utah_Chill_Units`Model:**
+
+```{r 23.5.2b}
+
+# For Chill_Units model
+Roter_plscf_cu <- PLS_chill_force(daily_chill_obj = daychill,
+                         bio_data_frame = Roter_first,
+                         split_month = 6,
+                         chill_models = "Utah_Chill_Units",
+                         heat_models = "GDH",
+                         runn_means = 11)
+
+plot_PLS(Roter_plscf_cu,
+         PLS_results_path = "data/OT/Roter_plscf_outputs") 
+
+```
+
+![***The Utah_Chill_Units Model***](./data/OT/Roter_plscf_outputs_Utah_Chill_Units_GDH.png)
+
+<br>
+
+**The `Chill_Portions` Model:**
+
+![***The Chill_Portions Model***](./data/OT/Roter_plscf_outputs_Chill_Portions_GDH.png)
+
+<br>
+
+**Best estimates of chilling and forcing phases**
+
+```{r 23.5.2c}
+
+data <- data.frame(
+  Model = c("Chilling Hours", "Utah Model", "Chill Portions"),
+  Chill_Start_JDay = c("-9", "-10", "-13"),
+  Chill_End_JDay = c("51", "68", "63"),
+  Heat_Start_JDay = c("6", "7", "6"),
+  Heat_End_JDay = c("107", "107", "107")
+)
+
+# Set base date as the last date of last year
+base_date <- ISOdate(2001, 12, 31)
+
+# Convert Julian days to dates and add date columns
+data <- data %>%
+  mutate(
+    Chill_Start_Date = base_date + as.numeric(Chill_Start_JDay) * 24 * 3600,
+    Chill_End_Date = base_date + as.numeric(Chill_End_JDay) * 24 * 3600,
+    Heat_Start_Date = base_date + as.numeric(Heat_Start_JDay) * 24 * 3600,
+    Heat_End_Date = base_date + as.numeric(Heat_End_JDay) * 24 * 3600
+  )
+
+kable(data) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+Out of the three models, the `Chilling_Hours` model does the worst job at detecting the chilling phase. If I had only used `Chilling_Hours`, I wouldn’t have been able to figure out the chilling phase from its output. But since I have results from the other two models, I added start and end dates for the chilling phase in the Chilling_Hours model to match them (I did this because the model just couldn't detect the chilling phase&mdash; not that there is no chilling phase). All three models seem to capture the heat accumulation phase pretty well, but none of them do a great job with the chilling period. 
+
+<br>
+
+***3. Plot results for all three analyses, including shaded plot areas for the chilling and forcing periods you estimated.***
+
+**The `Chilling_Hours` Model:**
+
+```{r 23.5.3a}
+
+# Plot the Chilling Hours Model
+plot_PLS_chill_force(Roter_plscf_ch,
+                     chill_metric = "Chilling_Hours",
+                     heat_metric = "GDH",
+                     chill_label = "CH",
+                     heat_label = "GDH",
+                     chill_phase = c(-9, 51), 
+                     heat_phase = c(6, 107))
+```
+
+<br>
+
+**The `Utah_Chill_Units` Model:**
+
+```{r 23.5.3b}
+
+# Plot the Utah Model
+plot_PLS_chill_force(Roter_plscf_cu,
+                     chill_metric = "Utah_Chill_Units",
+                     heat_metric = "GDH",
+                     chill_label = "CU",
+                     heat_label = "GDH",
+                     chill_phase = c(-10, 68),
+                     heat_phase = c(7, 107))
+
+```
+
+<br>
+
+**The `Chill_Portions` Model:**
+
+```{r 23.5.3c}
+
+# Plot the Chill Portions Model
+plot_PLS_chill_force(Roter_plscf,
+                     chill_metric = "Chill_Portions",
+                     heat_metric = "GDH",
+                     chill_label = "CP",
+                     heat_label = "GDH",
+                     chill_phase = c(-13, 63),
+                     heat_phase = c(6, 107))
+
+```
+
+<br>
+
+## Chapter 24: Examples of PLS regression with agroclimatic metrics
+
+### <span style="color:#71797E">24.1</span>&nbsp; PLS regression across species and agroclimatic contexts
+
+<div style="height: 18px;"></div>
 
 
 
