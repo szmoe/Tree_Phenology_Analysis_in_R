@@ -5623,8 +5623,9 @@ info_frost <-
 
 ```
 
+<br>
 
-***To check/ add details later***
+There might be a problem with my temperature data, since I used the records from further location and patched it with the data from nearer locations. So, there is some inconsistencies between projections of different climate models. 
 
 <br>
 
@@ -7891,7 +7892,7 @@ include_graphics("data/MS/MS_chill_comparison_animation.gif")
 ```
 
 
-*Check and add details later.*
+My plot got a problem because the model projected significantly lower chill days which leveled off after around 2050, but other climatic parameters are projected to be higher or similar patterns. As I mentioned before, this could be the data problem. I need to run with proper data to test this though.
 
 <br>
 
@@ -8297,13 +8298,27 @@ P-hacking, a practice known as a fishing expedition, is to purposely look for an
 
 ***2. Provide a sketch of your causal understanding of the relationship between temperature and bloom dates.***
 
-
-
-
+![***A causal diagram of the relationship between temperature and bloom dates***](./pic/ch20_qa.png)
 
 <br>
 
 ***3. What do we need to know to build a process-based model from this?***
+
+The highlight of a process-based model is that it can incorporates extensive knowledge of all processes. Currently, phenology modelling frameworks primarily focus on the effects of temperature (chill/ heat accumulation). A process-based model would enable us to broaden the framework by incorporating details on tree physiology and other possible system drivers of phenology. 
+
+Thus, a process-based model for the above causal diagram would require and could incorporate:
+
+- long-term phenological data (e.g. bloom dates, leaf emergence dates)
+
+- Long-term temperature records (daily/hourly)
+
+- Other environmental data (data on precipitation, humidity, soil type, etc)
+
+- Tree physiological data (e.g. species-specific chill and heat requirement, tree metabolic responses to temperature variations and photoperiod, etc.)
+
+- Tree genetic data
+
+These are some of the possible parameters, but a process-based model with many complex systems and parameters risks over-parameterization, which could make the model erroneous and unreliable. So, we should prioritize the parameters that are likely to be key drivers, or those for which we have a robust understanding, ensuring proper data availability (including for calibration and validation). 
 
 
 <br>
@@ -8828,10 +8843,9 @@ I can think of two possible reasons:
 
 2. There is actually no correlation observed&mdash; maybe the trees don't need chilling phase?
 
+We can rule out the second reason because we do expect chill accumulations in apple trees in a location like Klein-Altendorf. This hypothesis may be true for trees in tropical or subtropical regions, where trees do not require much chill accumulation. 
 
-
-
-
+So, it is possible that the PLS method does not work for this type of analysis. But then, we do see the PLS regression detecting chill response well in the case of 'Payne' walnuts in Davis, California. That means we can assume that the PLS method does work for this type of analysis, but just not all the time. California and Klein-Altendorf are two different locations with different climate&mdash; California has a Mediterran-like warmer climate, while Klein-Altendorf has much colder climate. This and other variations in the climatic and geographical characteristics between the two locations can be the reason behind the PLS not detecting the chill response in all occasions.
 
 <br>
 
@@ -10414,11 +10428,71 @@ plot_PLS_chill_force(Roter_plscf,
 
 ***1. Look across all the PLS results presented above. Can you detect a pattern in where chilling and forcing periods could be delineated clearly, and where this attempt failed?***
 
+```{r 24.2.1}
+
+location <- c("Beijing", "Beijing", "Beijing", "Beijing", "Shannxi",
+              "Klein-Alterndorf", "California", "UK", "Croatia", "Tunisia", 
+              "Tunisia")
+
+cultivar <- c("Chestnut", "Jujube", "Apricot", "Mountain peach",
+              "Apple", "Cherry", "Walnut","Apricot", "Grapevine", "Almond", 
+              "Pistachios")
+
+chilling_period <- c("Interrupted; unclear", "Interrupted; unclear", 
+                     "Interrupted; unclear", "Interrupted; unclear",
+                     "Interrupted; unclear", "Interrupted; unclear",
+                     "Mostly continuous; clear", 
+                     "Clear in later part of chill phase; long gap in between",
+                     "Discontinuous clear phases", "Continuous; clear",
+                     "Mostly continuous; clear")
+
+forcing_period <- c("Continuous; clear", "Continuous; clear",
+                    "Continuous; clear", "Continuous; clear",
+                    "Clear with slight break", "Continuous; clear",
+                    "Continuous; clear", "Continuous; clear",
+                    "Continuous; clear", "Unclear end of forcing period",
+                    "Interrupted; unclear")
+
+table_cf <- data.frame(Location = location, Cultivar = cultivar,
+                       Chilling_period = chilling_period,
+                       Forcing_period = forcing_period)
+
+colnames(table_cf) <- c("Location", "Cultivar", "Chilling period", "Forcing period")
+
+kable(table_cf) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+The pattern I see here is that regions with colder climate (e.g. Beijing, Klein-Alterndorf) have unclear and discontinuous chilling period followed by clear continuous forcing period, while in regions with warmer climate (e.g. California, Tunisia), the chilling period can be clearly delineated, followed by less clear forcing period. 
 
 <br>
 
 ***2. Think about possible reasons for the success or failure of PLS analysis based on agroclimatic metrics. Write down your thoughts.***
 
+**Reasons for the success for PLS analysis based on agroclimatic metrics are:**
+
+- Availability of long phenological record
+
+- Strong monotonic correlation between climate variables and phenological outcomes
+
+- Proper choice of agroclimatic metrics for analysis (e.g. chilling hour vs. chill portion models)
+
+- Temperate climate with clear delineation between chilling and forcing periods
+
+<br>
+
+**Reasons for the failure for PLS analysis based on agroclimatic metrics are:**
+
+- Extreme climatic conditions (non-monotonic relationship)
+
+- Low data variability (e.g. regions with all recorded temperatures fall within the effective chill range or out of the range)
+
+- Unclear delineation of chilling and forcing periods (e.g. in cases where chill accumulation may not happen continuously but in interrupted phases due to complex interactions with other external variables&mdash; PLS is too simple for that)
+
+- Sparse phenological data
 
 <br>
 
@@ -11725,6 +11799,12 @@ Based on this plot, the temperature range for highest chill accumulation is appr
 <br>
 
 ***2. We’ve looked at data from a number of locations so far. How would you expect this surface plot to look like in Beijing? And how should it look in Tunisia?***
+
+Beijing has much colder winter but warmer summer than Klein Altendorf. So, Beijing has more seasonal temperature variations, and this may give a broader response plot. The contour lines for Beijing may be more wavy and less vertical than those for Klein Altendorf, as it has colder climate where forcing temperatures dominate phenology. Earlier bloom dates (blue zone) may also be observed near the top of the plot, showing more correlation with warm forcing period. 
+
+Tunisia has a warmer climate than Klein Altendorf and a quick google search told me it has more temperature variations than Klein Altendorf. So, I would still expect a broader plot, but with more pronounced vertical lines, since in warmer climate, the chilling temperatures gain dominance on phenology as temperature increases. Earlier bloom dates (the blue zone) may be in lower part of the plot, and stronger color gradients along the horizontal direction&mdash; the blue (left side of the plot; lower x-axis temperature) and red zones (right side of the plot; higher x-axis temperature) may be like kinda parallel? 
+
+Another important thing I don't consider here is the chilling requirements for Roter Boskoop apple cultivar. Based on the plots I saw during the lectures, the temperature response plots for different cultivars can look very different even in the same location. I understood it was due to their different chilling requirements. So, if I knew the range of chill requirements for Roter apple and more exact ranges of temperature variations for our locations of interest, then I might have a better speculation. But, should I assume that the temperature in Klein Altendorf is best suited for the Roter's chill requirements, since the data were collected from there? Is Roter Boskoop cultivar grown in Klein Altendorf because that's the best possible location for it? If that is the case, my speculation of response plots wouldn't be very far from the truth? Or would it?????? 
 
 <br>
 
@@ -15129,7 +15209,7 @@ kable(head(Roter), caption = "Phenology dataset for the apple cultivar Roter Bos
 
 ```{r 33.4.2}
 
-CKA_weather <- read_tab("data/TMaxTMin1958-2019_patched.csv")
+CKA_weather <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv")
 
 Roter_Boskoop <- 
   Roter %>%
@@ -15167,7 +15247,7 @@ ggplot(data=Roter_Boskoop,aes(Pheno_year,JDay,col=variable)) +
 
 
 ggplot(data = Roter_Boskoop, aes(x = Pheno_year, y = JDay, color = variable)) +
-  geom_point(size = 2) +
+  geom_point(size = 1) +
   geom_smooth() + 
   theme_bw(base_size = 15) +
   scale_color_discrete(
@@ -15364,6 +15444,725 @@ lm(DuringBloom$Frost_hours ~ DuringBloom$Year)
 ### <span style="color:#71797E">34.1</span>&nbsp; Frost risk for future scenarios
 
 <div style="height: 18px;"></div>
+
+- We have seen in the previous chapter the importance of analyzing the risk of spring frost events in temperate fruit trees for historical periods. However, such analysis provides little information for planning strategies to adapt fruit orchards to potential frost events occurring in the future.
+
+- What we actually need for supporting farmers in making decisions is an assessment of the probability of experiencing frost events (and ideally also their severity) in the future. Such an assessment should consider the prospective impacts of climate change, but it is not an easy task.
+
+- On the one hand, spring frosts result from the occurrence of temperatures below the sensitivity threshold of the tree, which varies according to which kind of plant tissue is exposed to the cold. Plants become more sensitive to freezing temperatures as they develop from dormancy to harvest. 
+
+- On the other hand, tree development during and after dormancy is itself driven by temperature, with advancing or delaying effects depending on particular factors such as the species, cultivar and ultimately the place.
+
+- We therefore believe that conducting a proper frost risk analysis for future scenarios requires
+    - a robust method for estimating future temperatures, and 
+    - a valid modeling framework to predict bloom dates in temperate fruit trees.
+    
+\n
+
+- We can combine dataset of past conditions with the simulated conditions. We then use this to determine to what extent the combined temperature domain of these datasets covers the climatic conditions that are projected for future climate scenarios.
+
+- Here’s how we can create such a plot (very similar to what we did before):
+
+```{r 34.1a, eval=FALSE}
+
+# Load all the required packages for this lesson
+# library(chillR)
+# library(tidyverse)
+# library(patchwork)
+
+# Import the past weather dataset to build the hull plots for model validity domains
+# Note: data from 01.01.1958 to 20.06.2019. Not complete season for bloom in 1958 (missing Oct-Dec 1957). Barely passing the threshold for bloom in 2019 (need to set mrange to c(9, 5) in genSeasonList for PhenoFlex calibration)
+past_weather <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv")
+
+# Add the column SSP_Time for further discrimination with future scenarios
+past_weather$SSP_Time <- "Past"
+
+# Summarize the data by month. Compute the mean of Tmin and Tmax by RCP_Time, Year, and Month
+past_months <- past_weather %>%
+  group_by(SSP_Time, Year, Month) %>%
+  summarize(Tmin = mean(Tmin, na.rm = TRUE),
+            Tmax = mean(Tmax, na.rm = TRUE))
+
+
+unstructured_future_temps <- load_temperature_scenarios("data/Bonn/Bonn_future_climate",
+                                                        "Bonn_future_")
+
+future_temps <-
+  data.frame(bind_rows(lapply(unstructured_future_temps, bind_rows),
+                       .id = "List"))
+
+future_temps <- future_temps %>%
+  mutate(GCM = strsplit(List, '\\.') %>%
+           map(3) %>%
+           unlist(),
+         SSP = strsplit(List, '\\.') %>%
+           map(2) %>%
+           unlist(),
+         Time = strsplit(List, '\\.') %>%
+           map(4) %>%
+           unlist()) %>%
+  select(DATE, Year, Month, Day, Tmin, Tmax, SSP, Time, GCM)
+
+future_temps[future_temps$SSP == "ssp126","SSP_Time"] <-
+  paste("SSP1", future_temps[future_temps$SSP == "ssp126","Time"])
+
+future_temps[future_temps$SSP == "ssp245","SSP_Time"] <-
+  paste("SSP2", future_temps[future_temps$SSP == "ssp245","Time"])
+
+future_temps[future_temps$SSP == "ssp370","SSP_Time"] <-
+  paste("SSP3", future_temps[future_temps$SSP == "ssp370","Time"])
+
+future_temps[future_temps$SSP == "ssp585","SSP_Time"] <-
+  paste("SSP5", future_temps[future_temps$SSP == "ssp585","Time"])
+
+
+# Summarize the data by month. Compute the mean of Tmin and Tmax by RCP_Time, Year, and Month
+future_months <- future_temps %>%
+  group_by(SSP_Time, Year, Month) %>%
+  summarize(Tmin = mean(Tmin, na.rm = TRUE),
+            Tmax = mean(Tmax, na.rm = TRUE))
+  
+
+# Merge the past and future months to plot them together
+all_months <- rbind(past_months,
+                    future_months)
+
+# Add a column for the name of the month 
+all_months$month_name <- factor(all_months$Month,
+                                levels = c(6 : 12, 1 : 5), 
+                                labels = month.name[c(6 : 12, 1 : 5)])
+
+# Calculate the hulls for each group
+hull_temps <- all_months %>% 
+  group_by(SSP_Time, month_name) %>%
+  slice(chull(Tmin, Tmax))
+
+# Load the weather data from the experimental seasons to generate an "Enhanced" temps category
+enhanced <- read_tab("data/OT/final_weather_data_S1_S2_pear_hourly.csv")
+
+# Summarize the data. Compute the minimum and maximum records in a daily basis
+enhanced <- enhanced %>% group_by(YEARMODA, Treatment, Year, Month ) %>% 
+  summarize(Tmin = min(Temp, na.rm = TRUE),
+            Tmax = max(Temp, na.rm = TRUE))
+
+# Summarize the data by month now. Compute mean across minimum and maximum records
+enhanced <- enhanced %>% group_by(Treatment, Month) %>% summarize(Tmin = mean(Tmin),
+                                                                  Tmax = mean(Tmax))
+
+# Re-format the column Year and add the column RCP_Time
+enhanced$Year <- enhanced$Treatment
+enhanced$SSP_Time <- "Past_enhanced"
+
+# Combining the past and the enhanced temps
+past_months$SSP_Time <- "Past combined"
+enhanced$SSP_Time <- "Past combined"
+
+# Merge all the data. Simulated scenarios, observed scenarios, and enhanced temps
+all_months_both <- rbind(enhanced, past_months, future_months)
+
+# Add the labels for the month no
+all_months_both$month_name <- factor(all_months_both$Month, levels = c(6 : 12, 1 : 5), labels = month.name[c(6 : 12, 1 : 5)])
+
+# Create the hull
+hull_temps_both <- all_months_both %>% group_by(SSP_Time, month_name) %>% slice(chull(Tmin, Tmax))
+
+# Remove the temperature for the treatments excluded from the analysis. These treatments may be a bit unrealistic and therefore
+# difficult to be explained by the model
+all_months_both_conference <- filter(all_months_both, !(Year %in% c(3, 8, 9, 12, 13, 14, 15, 19,
+                                                                    23, 25, 26, 27, 28, 29, 32)))
+# Create the hull again
+hull_temps_both_conference <- all_months_both_conference %>%
+  group_by(SSP_Time,month_name) %>%
+  slice(chull(Tmin, Tmax))
+
+write.csv(hull_temps_both,"data/Bonn/hull_temps_both.csv",row.names = FALSE)
+write.csv(hull_temps_both_conference, "data/Bonn/hull_temps_both_conference.csv",row.names = FALSE)
+
+```
+
+
+```{r 34.1b, eval=FALSE}
+
+hull_temps_both <- read_tab("data/Bonn/hull_temps_both.csv")
+
+hull_temps_both$month_name <-
+  factor(hull_temps_both$Month,
+         levels = c(6:12, 1:5),
+         labels = month.name[c(6:12, 1:5)])
+
+# Implement the plot showing the overlap among conditions
+ggplot(hull_temps_both[which(hull_temps_both$Month %in% c(10,11,12,1,2,3)),],
+       aes(Tmin, Tmax, fill = factor(SSP_Time))) +
+  geom_polygon() +
+  facet_wrap(vars(month_name)) +
+  scale_fill_manual(name="Scenario",
+                    breaks=c("Past combined",
+                             "SSP1 2050",
+                             "SSP1 2085",
+                             "SSP2 2050",
+                             "SSP2 2085",
+                             "SSP3 2050",
+                             "SSP3 2085",
+                             "SSP5 2050",
+                             "SSP5 2085"),
+                    values=c("black",
+                             alpha("light green",0.4),
+                             alpha("dark green",0.4),
+                             alpha("coral",0.4),
+                             alpha("dark red",0.4),
+                             alpha("yellow",0.4),
+                             alpha("orange",0.4),                 
+                             alpha("light blue",0.4),
+                             alpha("dark blue",0.4))) +
+  xlab("Mean daily minimum temperature (°C)") +
+  ylab("Mean daily maximum temperature (°C)") +
+  theme_bw(base_size = 15)
+
+```
+
+<br>
+
+- This convex-hull plot is showing the coverage considering temperatures in CKA between 1958 and 2019 as well as all experimental seasons analyzed in chapter Experimentally enhanced PLS. 
+
+- To make the phenology modelling approach work with historical and experimental data, we would need to use phenology records from the same species and cultivar (pear cultivar ‘Conference’-*I changed it to apple*). 
+
+- Fortunately, we do have historical records for full bloom for this cultivar between 1958 and 2019. However, we may want to subset the experimental data used for the convex-hull plot to only retain seasons that were more or less normal. 
+
+- This is to reduce the misleading effects we may have introduced by using extremely warm treatments.
+
+- So let’s draw a new *convex-hull* plot without these unusually warm seasons.
+
+![](./pic/ch34_1.png)
+
+<br>
+
+- This is not a perfect coverage of course but we don’t have more data (for now) for October and November. There is little we can do to fill the coverage gap as we did not include warmer conditions in our experiments during these months.
+
+- We will proceed with these data hoping that in the near future we are able to identify ‘normal seasons’ in the experimental dataset that help us to improve our modelling validity domain.
+
+- We can now implement our dormancy modelling framework `PhenoFlex` by combining historical and experimental records. In this code chunk, we will import and format the data so we can calibrate the model using these records.
+
+```{r 34.1c, eval=FALSE}
+
+# Import the phenology data for the historical period 1958-2019
+# Note that we are selecting only the Year and full bloom columns
+historic_pheno_conference <- 
+  read_tab("data/OT/Pheno_pear_conference_1958_2019.csv")[c("Year",
+                                         "Full_bloom")]
+
+# Remove missing years
+historic_pheno_conference <- 
+  historic_pheno_conference[which(!historic_pheno_conference$Full_bloom==""),]
+
+# Add a column for the JDay
+historic_pheno_conference$Full_bloom <- 
+  dormancyR::date_to_JDay(date = as.Date(historic_pheno_conference$Full_bloom,
+                                         format = "%d.%m.%Y"),
+                          format = "%Y-%m-%d")
+
+# Rename the columns
+colnames(historic_pheno_conference) <- c("Year", "pheno")
+
+# Do the same for the weather data
+past_weather <- read_tab("data/OT/TMaxTMin1958-2019_patched.csv")
+
+# Create hourly temps for compatibility with the experimental data set
+past_weather <- stack_hourly_temps(weather = past_weather, 
+                                   latitude = 50.4)[["hourtemps"]]
+
+
+# Load the experimental data
+# Load the data from the folder
+exp_weather <- read_tab("data/OT/final_weather_data_S1_S2_pear_hourly.csv")
+
+# Generate a new column (Year_2) to simulate the year and comply with the format of PhenoFlex functions
+exp_weather["Year_2"] <- exp_weather$Treatment + exp_weather$Year + 3
+
+# Since this experiment was conducted during two consecutive seasons, the next step will fix a small continuity issue
+# generated during the season 2
+exp_weather[exp_weather$Treatment >= 17, "Year_2"] <-
+  exp_weather[exp_weather$Treatment >= 17, "Year_2"] - 1
+
+# For further compatibility, I will now select the columns needed and will drop "Year" (the original one)
+exp_weather <- exp_weather[c("YEARMODA",
+                             "Year_2", 
+                             "Month", 
+                             "Day",
+                             "Hour", 
+                             "JDay", 
+                             "Temp")]
+
+# To replace the missing "Year" column, I will now change the name of the column
+colnames(exp_weather)[which(colnames(exp_weather) == "Year_2")] <- "Year"
+
+
+# Import the phenology data from the repository
+exp_pheno <- read_tab("data/OT/final_bio_data_S1_S2_pear.csv")
+
+exp_pheno["Treatment"] <- exp_pheno$Treatment + 2019 + 3
+
+# Remove conflictive treatments
+exp_pheno <- exp_pheno[!(exp_pheno$Treatment %in% c(2025, 2030, 2031, 2034, 2035, 2036, 2037, 2041,
+                                                    2045, 2047, 2048, 2049, 2050, 2051, 2054)),
+                       c("Treatment", "pheno")]
+
+# Rename the columns to match the names of the historical dataset
+colnames(exp_pheno) <- c("Year", "pheno")
+
+
+# Merge the historical and experimental phenology data
+pheno_merged <- bind_rows(filter(historic_pheno_conference, Year != 1958),
+                          exp_pheno)
+
+
+# Merge the historical and experimental phenology data
+weather_merged <- bind_rows(past_weather[, colnames(past_weather) %in% names(exp_weather)],
+                            exp_weather)
+
+## For phenology and weather records, we now have the historical and experimental
+## data in the same dataset. We can follow the same procedure we implemented in 
+## the chapter Can we improve the performance of PhenoFlex? to fit the parameters 
+## of PhenoFlex to data.
+
+# Define the season used for calibration and validation in the PhenoFlex modelling approach
+calibration_seasons <- sort(sample(pheno_merged$Year, 50, replace = FALSE))
+validation_seasons <- sort(pheno_merged[!(pheno_merged$Year %in% calibration_seasons), "Year"])
+
+# Define the list of seasons (weather data)
+weather_season_list <- genSeasonList(weather_merged, mrange = c(9, 5), years = calibration_seasons)
+
+## Now we can apply what we learned in the chapter The PhenoFlex model and fit 
+## the model parameters to data. Note that we start the fitting procedure with 
+## wide ranges (particularly for yc and zc) in order to let the model find the 
+## best estimates. We are saving the parameters and the predicted bloom.
+
+# Set the initial parameters (wide ranges)
+#          yc,  zc,  s1, Tu,     E0,      E1,     A0,          A1,   Tf, Tc, Tb, slope
+lower <- c(20, 100, 0.1,  0, 3000.0,  9000.0, 6000.0,       5.e13,    0,  0,  0,  0.05)
+par   <- c(40, 190, 0.5, 25, 3372.8,  9900.3, 6319.5, 5.939917e13,    4, 36,  4,  1.60)
+upper <- c(80, 500, 1.0, 30, 4000.0, 10000.0, 7000.0,       6.e13,   10, 40, 10, 50.00)
+
+# Run the fitter
+pheno_fit <- phenologyFitter(par.guess = par,
+                             modelfn = PhenoFlex_GDHwrapper,
+                             bloomJDays = pheno_merged[pheno_merged$Year %in%
+                                                         calibration_seasons, "pheno"],
+                             SeasonList = weather_season_list,
+                             lower = lower,
+                             upper = upper,
+                             control = list(smooth = FALSE,
+                                            verbose = FALSE,
+                                            maxit = 2000,
+                                            nb.stop.improvement = 20))
+
+# Save the resulting parameters to folder (to avoid having to run the phenology fitter again)
+write.csv(pheno_fit$par, "data/OT/PhenoFlex_hist_exp_pear.csv", row.names = FALSE)
+
+# Save the results of the predicted phenology for the calibration seasons
+write.csv(data.frame(pheno_merged[pheno_merged$Year %in% calibration_seasons, ],
+                     "Predicted" = pheno_fit$pbloomJDays), "data/OT/PhenoFlex_hist_exp_predicted_bloom_pear.csv",
+          row.names = FALSE)
+
+```
+
+
+- We can now feed our model with the fitted parameters and then estimate the prediction error by comparing predicted with observed bloom dates.
+
+```{r 34.1d, eval=FALSE}
+
+# Read the parameters
+params <- read.csv("data/OT/PhenoFlex_hist_exp_pear.csv")[[1]]
+
+# Generate a data set to collect the outputs of the fitting for the calibration data 
+out_df <- read_tab("data/OT/PhenoFlex_hist_exp_predicted_bloom_pear.csv")
+
+# Compute the error (observed - predicted)
+out_df[["Error"]] <- out_df$pheno - out_df$Predicted
+
+## We can now compute some model performance metrics based on the prediction 
+## errors estimated above. This is not very relevant during the calibration 
+## procedure, but it can give us an idea on how successful our calibration 
+## attempt has been.
+
+# Define the season used for calibration and validation in the PhenoFlex modelling approach
+calibration_seasons <- out_df$Year
+validation_seasons <- sort(pheno_merged[!(pheno_merged$Year %in% calibration_seasons), "Year"])
+
+# Define the list of seasons (weather data)
+weather_season_list <- genSeasonList(weather_merged, mrange = c(9, 5), years = calibration_seasons)
+
+# Compute some metrics for the calibration procedure
+calibration_metrics <-
+  data.frame("Metric" = c("RMSEP",
+                          "RPIQ"),
+             "Calibration" = c(round(chillR::RMSEP(out_df$Predicted,
+                                           out_df$pheno,
+                                           na.rm = TRUE), # remove all NA values
+                                     2), # round to 2 digits
+                               round(chillR::RPIQ(out_df$Predicted,
+                                          out_df$pheno),
+                                     2)))
+
+kable(calibration_metrics) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+- There is certainly room for improvement (consider though that we only used 10 iterations of the fitting procedure), but this gives us a relatively small `RMSEP` for calibration. Let’s plot the results to see the big picture.
+    
+```{r 34.1e, eval=FALSE}
+
+# Plot the results to see the overall fitting
+ggplot(out_df, aes(pheno, Predicted)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(x = "Observed") +
+  theme_bw()
+
+
+```
+
+<br>
+
+- Once again, this is a good preliminary fitting for calibration but it may worth trying a different `par.guess` and other arguments within `phenologyFitter()` during model calibration.
+
+<br>
+
+### <span style="color:#71797E">34.2</span>&nbsp; Validation
+
+<div style="height: 18px;"></div>
+    
+- We should probably now take a look at how well this phenology model can predict bloom dates for seasons not used in the calibration data set. 
+
+- We need to extract the model parameters and use the function `PhenoFlex_GDHwrapper()` to complete this task.
+
+```{r 34.2a, eval=FALSE}
+# Generate a validation data set with phenology data
+valid_df <- pheno_merged[pheno_merged$Year %in% validation_seasons, ]
+
+# Generate a list of seasons with weather data for the validation procedure
+valid_season_list <- genSeasonList(weather_merged, mrange = c(9, 7), 
+                                   years = validation_seasons)
+
+# Estimate the bloom dates with PhenoFlexGDHwrapper
+for (i in 1 : nrow(valid_df)) {
+  
+  valid_df[i, "Predicted"] <- PhenoFlex_GDHwrapper(valid_season_list[[i]],
+                                                   params)
+}
+
+# Compute the error (observed - predicted)
+valid_df[["Error"]] <- valid_df$pheno - valid_df$Predicted
+
+# Compute some metrics for the validation dataset
+validation_metrics <- data.frame(calibration_metrics,
+                                 "Validation" = c(round(chillR::RMSEP(valid_df$Predicted,
+                                                              valid_df$pheno,
+                                                              na.rm = TRUE),
+                                                        2),
+                                                  round(chillR::RPIQ(valid_df$Predicted,
+                                                             valid_df$pheno,
+                                                             na.rm = TRUE),
+                                                        2)))
+
+write.csv(validation_metrics, "data/OT/frost_validation_metrics.csv", row.names = FALSE)
+
+validation_metrics <- read_tab("data/OT/frost_validation_metrics.csv")
+kableExtra::kable(validation_metrics) %>%
+  kable_styling("striped", position = "left", font_size = 10)
+
+```
+
+<br>
+
+- The results shown in the table above represent a good preliminary performance of the model in forecasting bloom dates in pear trees for conditions we may expect in the future. 
+
+- Note that for a more robust analysis, we should try fitting `PhenoFlex` many times in order to achieve lower `RMSEP` values. We could also consider limiting the number of experimental seasons (which may be adding somewhat ‘extreme’ values) to narrow the range of conditions observed in the warm part of the model validity domain. 
+
+- Additional errors may originate from merging two data sets obtained with different methodologies (mature trees in the orchard vs. young potted trees, different observers across experiments, etc.). 
+
+- Let’s take a look at the fitting outcomes. We added labels to show the season presenting an error greater than 10 days.
+
+```{r 34.2b, eval=FALSE}
+
+# Plot the validation and calibration results (highlight seasons with 10 or more days of error)
+ggplot() +
+  geom_point(data = out_df, aes(pheno, Predicted, color = "Calibration")) +
+  geom_point(data = valid_df, aes(pheno, Predicted, color = "Validation")) + 
+  ggrepel::geom_label_repel(aes(pheno, Predicted, label = Year),
+                            data = filter(out_df, abs(Error) > 10), nudge_y = 2, nudge_x = 6) +
+  ggrepel::geom_label_repel(aes(pheno, Predicted, label = Year),
+                            data = filter(valid_df, abs(Error) > 10), nudge_y = -1, nudge_x = 9, force = 4) +
+  scale_color_manual(values = c("cadetblue", "firebrick")) +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(x = "Observed",
+       color = "Dataset") +
+  theme_bw()
+
+
+```
+
+<br>
+
+- Using the set of parameters fitted in the previous model runs, we can predict bloom dates for future scenarios. To this end, we will need to use the data generated in chapter Future temperature scenarios. Fortunately, we already loaded that data into R when generating the convex-hull plots.
+
+- We will use the function `PhenoFlex_GDHwrapper()` to estimate the date of bloom for future scenarios. The first two sections of the for loop are commands to get the data into a good format for estimating bloom dates. We need to derive hourly records using `stack_hourly_temps()` and then define the seasons with `genSeasonList()`.
+
+```{r 34.2c, eval=FALSE}
+
+# Create a primer data frame to allocate the results for future bloom
+future_bloom <- future_temps %>% 
+  group_by(SSP_Time, 
+           GCM, 
+           Year) %>% 
+  summarise(Pheno = NA)
+
+# Define the scenarios to be used in the for loop
+scenarios <- unique(future_temps$SSP_Time)
+
+# Define the climate models to be used in the for loop
+climate_models <- unique(future_temps$GCM)
+
+# Implement the for loop
+for (scenario in scenarios){
+  scen_file <- future_temps %>% 
+    filter(SSP_Time == scenario)
+  
+  climate_models <- unique(scen_file$GCM)
+  
+  for (climate_model in climate_models){
+    
+    # Subset a temporary data frame according to scenario and climate model
+    # and generate hourly temperatures
+    temp_df <- filter(scen_file,
+                      GCM == climate_model) %>%
+      stack_hourly_temps(latitude = 50.4)
+    
+    # Define the saeasons to be used for predicting the phenology
+    temp_seasons_list <- genSeasonList(temp_df$hourtemps, 
+                                       mrange = c(9, 7),
+                                       years = c(2002 : 2101))
+    
+    # Change the names of the list of seasons to be used as index in the next for loop
+    names(temp_seasons_list) <- 2002 : 2101
+    
+    # Implement a for loop that runs over the list of seasons to estimate the bloom date using the parameters fitted by the
+    # model
+    for (i in 1 : length(temp_seasons_list)){
+      
+      # Add the bloom date to the primer data set
+      future_bloom[future_bloom$SSP_Time == scenario & 
+                     future_bloom$GCM == climate_model & 
+                     future_bloom$Year == names(temp_seasons_list)[i], 
+                   "Pheno"] <-
+        PhenoFlex_GDHwrapper(temp_seasons_list[[i]],
+                             params)
+    }
+  }
+}
+
+## We can now implement the same procedure to estimate bloom dates for 
+## historical simulated scenarios.
+
+# Bloom for past simulated scenarios ####
+# Load the historical simulated scenarios
+temps_past_scenarios <- load_temperature_scenarios("data/Bonn",
+                                    "Bonn_hist_scenarios")
+
+# Create a single dataset for all the simulated years
+temps_past_scenarios <- bind_rows(temps_past_scenarios,
+                                  .id = "Scen_year")
+
+# Make a primer dataset to allocate the results of the bloom projection
+simulated_bloom <- temps_past_scenarios %>% 
+  group_by(Scen_year, Year) %>% 
+  summarise(Pheno = NA)
+
+# Define the scenario years to be used in the loop
+scen_years <- unique(simulated_bloom$Scen_year)
+
+# Implement the for loop
+for (scen_year in scen_years){
+  
+  # Subset a temporary data frame according to scenario and climate model
+  temp_df <- filter(temps_past_scenarios, 
+                    Scen_year == scen_year)
+  
+  # Generate hourly temperatures in the temporary data frame
+  temp_df <- stack_hourly_temps(temp_df,
+                                latitude = 50.4)
+  
+  # Define the saeasons to be used for predicting the phenology
+  temp_seasons_list <- genSeasonList(temp_df$hourtemps, 
+                                     mrange = c(9, 7), 
+                                     years = c(2002 : 2101))
+  
+  # Change the names of the list of seasons to be used as index in the next for loop
+  names(temp_seasons_list) <- 2002 : 2101
+  
+  # Implement a for loop that runs over the list of seasons to estimate the bloom date using the parameters fitted by the
+  # model
+  for (i in 1 : length(temp_seasons_list)){
+    
+    # Add the bloom date to the primer data set
+    simulated_bloom[simulated_bloom$Scen_year == scen_year & 
+                      simulated_bloom$Year == names(temp_seasons_list)[i], 
+                    "Pheno"] <- 
+      PhenoFlex_GDHwrapper(temp_seasons_list[[i]],
+                                                                                                            params)
+  }
+}
+
+write.csv(simulated_bloom, "data/OT/frost_simulated_bloom.csv", row.names = FALSE)
+
+# Plot all bloom prediction results
+
+# Plot showing the violins for historical simulated scenarios
+past_simulated_plot <-
+  ggplot(data = simulated_bloom) +
+  geom_violin(
+    aes(x = Scen_year,
+        group = Scen_year, 
+        y = Pheno),
+    linewidth = 0.35,
+    draw_quantiles = c(0.25, 0.5, 0.75),
+    alpha = 0.5) +
+  facet_grid(~ "Historical") +
+  theme_bw() +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        plot.background = element_rect(fill = "transparent"),
+        panel.background = element_blank(),
+        panel.grid = element_blank(),
+        aspect.ratio = 4)
+
+past_xlim <- layer_scales(past_simulated_plot)$x$range$range
+past_ylim <- layer_scales(past_simulated_plot)$y$range$range
+
+# Make a density plot to show the distribution of the seasons used for calibration of the PhenoFlex modelling framework
+# Create a dataframe with columns to be used in the plot
+observed_bloom_calibration <-
+  data.frame(out_df,
+             Facet = "Past scenarios",
+             Dataset = if_else(out_df$Year > 2010, 
+                               "Experimental", 
+                               "Historical"))
+
+# Make a density plot of the bloom dates included in the calibration dataset
+gg_density_plot <-   
+  ggplot() +
+  geom_density(data = observed_bloom_calibration,
+               aes(y = pheno, 
+                   fill = Dataset)
+  )
+
+# Extract data from the plot
+density_data <- 
+  gg_density_plot %>% 
+  ggplot_build() %>%
+  pluck(1,1) %>% 
+  select(x:y,group)
+
+
+# Scale data so that they can be plotted on the Year axis
+density_data[density_data$group == 1, "Dataset"] <- "Experimental"
+density_data[density_data$group == 2, "Dataset"] <- "Historical"
+density_data <- 
+  density_data %>%
+  mutate(density_scaled = x / max(x),
+         density_scaled = density_scaled * (past_xlim[2] - 
+                                              past_xlim[1]) * 0.9 + past_xlim[1])
+
+# merge the two plots (and plot the violin plot again, so that it's placed
+# on top)
+
+past_observed_plot <- 
+  past_simulated_plot +
+  geom_ribbon(data = density_data,
+            stat = "identity",
+            position = "identity",
+            aes(xmin = past_xlim[1],
+                xmax = density_scaled,
+                y = y,
+                fill = Dataset),
+         alpha = 0.75) +
+  geom_violin(data = simulated_bloom,
+    aes(x = Scen_year,
+        group = Scen_year, 
+        y = Pheno),
+    size = 0.35,
+    draw_quantiles = c(0.25, 0.5, 0.75),
+    alpha = 0.5) +
+  scale_y_continuous(limits = c(10,160),
+                     labels = function (x) 
+                       format(dormancyR::JDay_to_date(x, 
+                                                      2001,
+                                                      na.rm = TRUE),
+                              "%b %d")) +
+  theme(legend.position = c(0.5, 0.1),
+        axis.text.x = element_text(size = 8, 
+                                   angle = 45,
+                                   vjust = .4, 
+                                   hjust = .6),
+        legend.text = element_text(size = 6),
+        legend.title = element_text(size = 8))
+
+
+# Create a violin plot to show future bloom dates
+future_bloom_plot <- ggplot(na.omit(future_bloom),
+                            aes(GCM, Pheno, fill = GCM)) +
+  geom_violin(size = 0.35,
+              draw_quantiles = c(0.25, 0.75)) +
+  stat_summary(fun = "median", 
+               geom = "point",
+               shape = 4,
+               size = 0.8) +
+  scale_y_continuous(limits = c(10, 160),
+                     labels = function (x)
+                       format(dormancyR::JDay_to_date(x,
+                                                      2001,
+                                                      na.rm = TRUE), 
+                              "%b %d"))  +
+  facet_grid(~ SSP_Time) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(0.4, "cm"),
+        legend.text = element_text(size = 7),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()
+       )
+
+# Combine plots
+library(patchwork)
+
+past_observed_plot +
+             future_bloom_plot
+
+# Save the plot to the folder
+
+ggsave("pic/future_pheno_pear.png", 
+       device = "png", 
+       width = 19, 
+       height = 15,
+       units = "cm", 
+       dpi = 600)
+
+
+
+```
+    
+
+
+
+
+
+
+
+
+
 
 
 
