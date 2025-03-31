@@ -15389,6 +15389,49 @@ ggplot(data = Roter_Boskoop %>% filter(variable == "Full_bloom"),
 
 I guess it is the problem with `ggplot` layering. 
 
+Try it with adjusted ylim limit:
+
+```{r 33.4.4c}
+
+# Professor's note: In chapter 33, the reason why the full-bloom line is 
+# interrupted is that you limited the y-axis extent to 75-140. 
+# I suspect the latest full bloom date is later than day 140, so it gets cut off. 
+# You didn't restrict the y-axis in your test plots, which is why this plotted 
+# correctly there.
+
+ggplot(data = Ribbon_Roter,
+       aes(Pheno_year)) +
+  geom_ribbon(aes(ymin = First_bloom, 
+                  ymax = Last_bloom),
+              fill = "light gray") +
+  geom_line(aes(y = Full_bloom)) +
+  theme_bw(base_size = 15) +
+  xlab("Phenological year") +
+  ylab("Julian date (day of the year)") +
+  geom_point(data = Daily_frost,
+             aes(Year,
+                 JDay,
+                 size = Frost_hours,
+                 col = Bloom_frost),
+             alpha = 0.8) + 
+  scale_size(range = c(0, 5),
+             breaks = c(1, 5, 10, 15, 20),
+             labels = c("1", "5", "10", "15", "20"),
+             name = "Frost hours") +
+  scale_color_manual(
+    breaks = c("Before bloom",
+               "During bloom",
+               "After bloom"),
+    values = c("light green",
+               "red",
+               "light blue"),
+    name = "Frost timing") +
+  theme_bw(base_size = 15) +
+  ylim(c(75, 150))
+
+
+```
+
 
 <br>
 
@@ -15515,6 +15558,8 @@ future_temps[future_temps$SSP == "ssp370","SSP_Time"] <-
 future_temps[future_temps$SSP == "ssp585","SSP_Time"] <-
   paste("SSP5", future_temps[future_temps$SSP == "ssp585","Time"])
 
+# Create csv for 34.2c
+write.csv(future_temps, "data/OT/future_temps.csv", row.names = FALSE)
 
 # Summarize the data by month. Compute the mean of Tmin and Tmax by RCP_Time, Year, and Month
 future_months <- future_temps %>%
@@ -15581,7 +15626,7 @@ write.csv(hull_temps_both_conference, "data/Bonn/hull_temps_both_conference.csv"
 ```
 
 
-```{r 34.1b, eval=FALSE}
+```{r 34.1b}
 
 hull_temps_both <- read_tab("data/Bonn/hull_temps_both.csv")
 
@@ -15624,7 +15669,7 @@ ggplot(hull_temps_both[which(hull_temps_both$Month %in% c(10,11,12,1,2,3)),],
 
 - This convex-hull plot is showing the coverage considering temperatures in CKA between 1958 and 2019 as well as all experimental seasons analyzed in chapter Experimentally enhanced PLS. 
 
-- To make the phenology modelling approach work with historical and experimental data, we would need to use phenology records from the same species and cultivar (pear cultivar ‘Conference’-*I changed it to apple*). 
+- To make the phenology modelling approach work with historical and experimental data, we would need to use phenology records from the same species and cultivar (pear cultivar ‘Conference’). 
 
 - Fortunately, we do have historical records for full bloom for this cultivar between 1958 and 2019. However, we may want to subset the experimental data used for the convex-hull plot to only retain seasons that were more or less normal. 
 
@@ -15642,7 +15687,7 @@ ggplot(hull_temps_both[which(hull_temps_both$Month %in% c(10,11,12,1,2,3)),],
 
 - We can now implement our dormancy modelling framework `PhenoFlex` by combining historical and experimental records. In this code chunk, we will import and format the data so we can calibrate the model using these records.
 
-```{r 34.1c, eval=FALSE}
+```{r 34.1c}
 
 # Import the phenology data for the historical period 1958-2019
 # Note that we are selecting only the Year and full bloom columns
@@ -15676,12 +15721,12 @@ past_weather <- stack_hourly_temps(weather = past_weather,
 exp_weather <- read_tab("data/OT/final_weather_data_S1_S2_pear_hourly.csv")
 
 # Generate a new column (Year_2) to simulate the year and comply with the format of PhenoFlex functions
-exp_weather["Year_2"] <- exp_weather$Treatment + exp_weather$Year + 3
+exp_weather["Year_2"] <- exp_weather$Treatment + exp_weather$Year + 3 # 1+2018+3
 
 # Since this experiment was conducted during two consecutive seasons, the next step will fix a small continuity issue
 # generated during the season 2
 exp_weather[exp_weather$Treatment >= 17, "Year_2"] <-
-  exp_weather[exp_weather$Treatment >= 17, "Year_2"] - 1
+  exp_weather[exp_weather$Treatment >= 17, "Year_2"] - 1 #remove 1 for no treatment?
 
 # For further compatibility, I will now select the columns needed and will drop "Year" (the original one)
 exp_weather <- exp_weather[c("YEARMODA",
@@ -15768,7 +15813,7 @@ write.csv(data.frame(pheno_merged[pheno_merged$Year %in% calibration_seasons, ],
 
 - We can now feed our model with the fitted parameters and then estimate the prediction error by comparing predicted with observed bloom dates.
 
-```{r 34.1d, eval=FALSE}
+```{r 34.1d}
 
 # Read the parameters
 params <- read.csv("data/OT/PhenoFlex_hist_exp_pear.csv")[[1]]
@@ -15786,10 +15831,12 @@ out_df[["Error"]] <- out_df$pheno - out_df$Predicted
 
 # Define the season used for calibration and validation in the PhenoFlex modelling approach
 calibration_seasons <- out_df$Year
-validation_seasons <- sort(pheno_merged[!(pheno_merged$Year %in% calibration_seasons), "Year"])
+validation_seasons <- sort(pheno_merged[!(pheno_merged$Year %in% calibration_seasons), 
+                                        "Year"])
 
 # Define the list of seasons (weather data)
-weather_season_list <- genSeasonList(weather_merged, mrange = c(9, 5), years = calibration_seasons)
+weather_season_list <- genSeasonList(weather_merged, mrange = c(9, 5), 
+                                     years = calibration_seasons)
 
 # Compute some metrics for the calibration procedure
 calibration_metrics <-
@@ -15812,7 +15859,7 @@ kable(calibration_metrics) %>%
 
 - There is certainly room for improvement (consider though that we only used 10 iterations of the fitting procedure), but this gives us a relatively small `RMSEP` for calibration. Let’s plot the results to see the big picture.
     
-```{r 34.1e, eval=FALSE}
+```{r 34.1e}
 
 # Plot the results to see the overall fitting
 ggplot(out_df, aes(pheno, Predicted)) +
@@ -15838,7 +15885,7 @@ ggplot(out_df, aes(pheno, Predicted)) +
 
 - We need to extract the model parameters and use the function `PhenoFlex_GDHwrapper()` to complete this task.
 
-```{r 34.2a, eval=FALSE}
+```{r 34.2a}
 # Generate a validation data set with phenology data
 valid_df <- pheno_merged[pheno_merged$Year %in% validation_seasons, ]
 
@@ -15885,7 +15932,7 @@ kableExtra::kable(validation_metrics) %>%
 
 - Let’s take a look at the fitting outcomes. We added labels to show the season presenting an error greater than 10 days.
 
-```{r 34.2b, eval=FALSE}
+```{r 34.2b}
 
 # Plot the validation and calibration results (highlight seasons with 10 or more days of error)
 ggplot() +
@@ -15906,11 +15953,14 @@ ggplot() +
 
 <br>
 
-- Using the set of parameters fitted in the previous model runs, we can predict bloom dates for future scenarios. To this end, we will need to use the data generated in chapter Future temperature scenarios. Fortunately, we already loaded that data into R when generating the convex-hull plots.
+- Using the set of parameters fitted in the previous model runs, we can predict bloom dates for future scenarios. To this end, we will need to use the data generated in chapter **Future temperature scenarios**. Fortunately, we already loaded that data into R when generating the convex-hull plots.
 
 - We will use the function `PhenoFlex_GDHwrapper()` to estimate the date of bloom for future scenarios. The first two sections of the for loop are commands to get the data into a good format for estimating bloom dates. We need to derive hourly records using `stack_hourly_temps()` and then define the seasons with `genSeasonList()`.
 
 ```{r 34.2c, eval=FALSE}
+
+# Load future_temps data
+future_temps <- read_tab("data/OT/future_temps.csv")
 
 # Create a primer data frame to allocate the results for future bloom
 future_bloom <- future_temps %>% 
@@ -15962,6 +16012,8 @@ for (scenario in scenarios){
     }
   }
 }
+
+write.csv(future_bloom, "data/OT/frost_future_bloom.csv", row.names = FALSE)
 
 ## We can now implement the same procedure to estimate bloom dates for 
 ## historical simulated scenarios.
@@ -16017,7 +16069,29 @@ for (scen_year in scen_years){
 
 write.csv(simulated_bloom, "data/OT/frost_simulated_bloom.csv", row.names = FALSE)
 
+```
+
+- We are going to produce a plot now to show the likely bloom dates for historical and future scenarios. We will also add the data used for calibration of the PhenoFlex model.
+
+- The plot is a bit complicated, because it’s difficult to plot two datasets with different axes in the same plot panel. 
+
+- The plotting strategy below goes as follows:
+    - We start with a violin plot of the simulated bloom data for the past scenarios.
+    - Then we extract the x and y axis limits from this plot (using the `layer_scales` command).
+    - We make a density plot of the calibration data (distinguishing between the historical and experimental data), but only to extract the data from it (the `ggplot_build` part below).
+    - We convert the density data that we extracted from the plot into numeric values that can be plotted on the same axis as the years in the first plot.
+    - We then add these data to the first plot as a `geom_ribbon`.
+    - We make a plot of the future data (much easier).
+    - We combine both plots using the patchwork package.
+    - We save this as an image using the `ggsave` function.
+    - We still had to adjust all kinds of settings…
+
+```{r 34.2d}
+
 # Plot all bloom prediction results
+
+simulated_bloom <- read_tab("data/OT/frost_simulated_bloom.csv")
+future_bloom <- read_tab("data/OT/frost_future_bloom.csv")
 
 # Plot showing the violins for historical simulated scenarios
 past_simulated_plot <-
@@ -16136,7 +16210,7 @@ future_bloom_plot <- ggplot(na.omit(future_bloom),
        )
 
 # Combine plots
-library(patchwork)
+# library(patchwork)
 
 past_observed_plot +
              future_bloom_plot
@@ -16150,20 +16224,387 @@ ggsave("pic/future_pheno_pear.png",
        units = "cm", 
        dpi = 600)
 
+```
 
+<br>
+
+- We can see that bloom in pear cv. Conference is expected to advance slightly under future scenarios. 
+
+- What we need to know now is the probability of observing frost events during the flowering period. 
+
+- To this end, we will assume a bloom period of 10 days around the expected date for full bloom for each simulated year and take a look at the temperatures during these days.
+
+```{r 34.2e, eval=FALSE}
+
+## Frost risk part
+# Add the "buffer" around the estimated bloom dates to compute the number of 
+# hours below 0 °C in this period. Hypothetically, this represents the
+# period of bloom in all scenarios
+
+# Define the buffer only once
+bloom_buffer <- 5
+
+# Mutate the future bloom dataset to add the beggining and end for bloom
+future_bloom <- future_bloom %>% 
+  mutate(Beginning = Pheno - bloom_buffer,
+         End = Pheno + bloom_buffer)
+
+# Do the same with the observed bloom dataset (i.e. calibration)
+observed_bloom_calibration <- observed_bloom_calibration %>% 
+  mutate(Beginning = pheno - bloom_buffer,
+         End = pheno + bloom_buffer)
+
+# Same with the past simulated data from historical scenarios
+simulated_bloom <- simulated_bloom %>%
+  mutate(Beginning = Pheno - bloom_buffer,
+         End = Pheno + bloom_buffer)
+
+## We will now compute the number of frost hours expected to occur under future 
+## scenarios as well as under historical simulated scenarios. 
+## We implement this by using several 'for' loops.
+
+for (i in 1 : nrow(observed_bloom_calibration)){
+  
+  # Extract the beginning and end date for observed bloom
+  beg_bloom <- observed_bloom_calibration[i, "Beginning"]
+  
+  end_bloom <- observed_bloom_calibration[i, "End"]
+  
+  # Subset a temporary dataframe of weather records for the year of interest
+  temp_df <- filter(weather_merged, 
+                    Year == observed_bloom_calibration[i, "Year"])
+  
+  # Add the Julian date
+  temp_df <- make_JDay(temp_df)
+  
+  # Filter only the period for bloom
+  temp_df <- filter(temp_df,
+                    JDay %in% c(beg_bloom : end_bloom))
+  
+  # Calculate the number of hours below 0 °C
+  frost_hours <- max(dormancyR::frost_risk(temp_df$Temp, 
+                                           threshold = 0))
+  
+  # Add the number of hours to the original dataframe
+  observed_bloom_calibration[i, "Frost"] <- frost_hours
+  
+}
+
+## We repeat the procedure for past simulated and future scenarios.
+
+# Make a primer dataset to allocate the results of the frost projections
+simulated_frost <- temps_past_scenarios %>% 
+  group_by(Scen_year, Year) %>% 
+  summarise(Frost = NA)
+
+# Implement the loop over scenario years and simulated years 
+for (scen_year in scen_years)
+  for (year in c(2002 : 2100)){
+    
+    if(!is.na(filter(simulated_bloom, 
+                     Scen_year == scen_year & 
+                     Year == year)[["Pheno"]]   ))
+      {
+      
+      # Extract the beginning and end of the blooming period
+      beg_bloom <- filter(na.omit(simulated_bloom), 
+                          Scen_year == scen_year & 
+                            Year == year)[["Beginning"]]
+      
+      beg_bloom <- trunc(beg_bloom)
+      
+      end_bloom <- filter(na.omit(simulated_bloom), 
+                          Scen_year == scen_year, 
+                          Year == year)[["End"]]
+      
+      end_bloom <- trunc(end_bloom)
+      
+      # Filter the weather data according to the relevant scenario year and simulated year
+      
+      temp_df <- filter(temps_past_scenarios, 
+                        Scen_year == scen_year &
+                          Year == year)
+      
+      # Derive hourly temperatures based on the latitude of Campus Klein-Altendorf
+      temp_df <- stack_hourly_temps(temp_df,
+                                    latitude = 50.4)[["hourtemps"]]
+      
+      # Filter the relevant period when bloom is likely to occurs
+      
+      temp_df <- filter(temp_df, 
+                        JDay %in% c(beg_bloom : end_bloom))
+      
+      # Compute the number of frost hours
+      frost_hours <- max(dormancyR::frost_risk(temp_df$Temp, 
+                                               threshold = 0))
+      } else frost_hours <- 0
+      
+      # Add the number of frost events to the primer dataset
+      
+      simulated_frost[simulated_frost$Scen_year == scen_year & 
+                      simulated_frost$Year == year, "Frost"] <- frost_hours
+
+}
+
+# Remove NA cells since the first year has no bloom
+simulated_frost <- na.omit(simulated_frost)
+
+# Save as csv, so I don't need to run the loop again
+write.csv(simulated_frost, "data/OT/simulated_frost.csv", row.names = FALSE)
+
+
+## Now we process the future scenarios.
+
+# Create a primer data frame to allocate the results for future bloom
+future_frost <- future_temps %>%
+  group_by(SSP_Time, GCM, Year) %>% 
+  summarise(Frost = NA)
+
+# Implement the for loop
+for (scenario in scenarios)
+    {scen_file <- future_bloom %>% 
+      filter(SSP_Time == scenario)
+    climate_models <- unique(scen_file$GCM)
+    
+    for (climate_model in climate_models)
+      for (year in c(2002 : 2100)){
+      
+        if(!is.na(filter(scen_file,
+                         GCM == climate_model & 
+                         Year == year)[["Pheno"]]   ))
+        {
+          beg_bloom <- filter(na.omit(scen_file),
+                              GCM == climate_model &
+                                Year == year)[["Beginning"]]
+          
+          beg_bloom <- trunc(beg_bloom)
+          
+          end_bloom <- filter(na.omit(scen_file),
+                              GCM == climate_model &
+                                Year == year)[["End"]]
+          
+          end_bloom <- trunc(end_bloom)
+          
+          # Derive hourly temperatures based on the latitude of Campus Klein-Altendorf
+          
+          temp_df <- filter(future_temps,
+                            SSP_Time == scenario & 
+                              GCM == climate_model &
+                              Year == year)
+          
+          temp_df <- stack_hourly_temps(temp_df,
+                                        latitude = 50.4)[["hourtemps"]]
+          
+          temp_df <- filter(temp_df,
+                            JDay %in% c(beg_bloom : end_bloom))
+          
+          frost_hours <- max(dormancyR::frost_risk(temp_df$Temp,
+                                                   threshold = 0))
+          } else frost_hours <- 0
+          
+          future_frost[future_frost$SSP_Time == scenario & 
+                         future_frost$GCM == climate_model &
+                         future_frost$Year == year, "Frost"] <- frost_hours
+      }
+    }
+# Remove NA cells since the first year has no bloom
+future_frost <- na.omit(future_frost)
+
+# Save as csv, so I don't need to run the loop again
+write.csv(future_frost, "data/OT/future_frost.csv", row.names = FALSE)
+
+```
+
+
+- We can now plot the results to see the overall picture. 
+
+- We will use the same kind of plot we normally use to show the projections of
+agro-climatic-related metrics. In brief, we create two plots and combine them using the `patchwork` package.
+
+```{r 34.2f}
+
+# Load saved csv for plotting
+simulated_frost <- read_tab("data/OT/simulated_frost.csv")
+future_frost <- read_tab("data/OT/future_frost.csv")
+
+# Plots
+past_frost_plot <- ggplot(simulated_frost,
+                          aes(Scen_year, 
+                              Frost,
+                              group = Scen_year)) +
+  geom_boxplot(fill = "cadetblue",
+               outlier.size = 0.8, 
+               outlier.alpha = 0.5, 
+               outlier.shape = 1) +
+  #geom_point(data = observed_bloom_calibration, aes(as.character(Year), Frost)) +
+  scale_y_continuous(limits = c(0, 90), 
+                     expand = expansion(mult = 0)) +
+  labs(x = "Year",
+       y = "Spring frost (hours <0 °C)") +
+  facet_grid(~ "Historical") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size = 7, 
+                                   angle = 60, 
+                                   hjust = 1))
+
+future_frost_plot <- ggplot(future_frost,
+                            aes(GCM, 
+                                Frost, 
+                                fill = GCM)) +
+  geom_boxplot(outlier.size = 0.8, 
+               outlier.alpha = 0.5, 
+               outlier.shape = 1) +
+  scale_y_continuous(limits = c(0, 90),
+                     expand = expansion(mult = 0)) +
+  facet_grid(~ SSP_Time) +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "bottom",
+        legend.text = element_text(size = 7.5),
+        legend.key.size = unit(0.3, "cm"))
+
+past_frost_plot + 
+  future_frost_plot + 
+  plot_layout(widths = c(0.25, 1))
 
 ```
     
 
+<br>
 
+- One interesting feature here is the large number of outliers we generated for each simulated scenario. 
 
+- The overall trend suggests there may be a slight decline in the risk of spring frost events for pear cv. Conference under future scenarios although the projections for bloom suggested an advance in the occurrence of the flowering period.
 
+<br>
 
+## Chapter 35: Major concepts
 
+### <span style="color:#71797E">35.1</span>&nbsp; Key insights
 
+#### <span style="color:#71797E">35.1.1</span>&nbsp; Tree dormancy
 
+<div style="height: 18px;"></div>
 
+- Most woody perennials that evolved in cold-winter climates fall dormant in winter.
 
+- To resume active growth, they need to fulfill a chill and a heat requirement.
 
+- The chill accumulation period is called *endodormancy*, the heat accumulation phase *ecodormancy*.
+
+- Many factors appear to be involved in dormancy release, including intercellular communication, carbohydrate storage and transport, plant hormones and up- and downregulation of genes.
+
+- We don’t currently have full understanding of all this, and there are no convincing process-based models.
+
+<br>
+
+#### <span style="color:#71797E">35.1.2</span>&nbsp; Climate change
+
+<div style="height: 18px;"></div>
+
+- Our planet is warming, and this will change temperature and (probably) precipitation regimes everywhere.
+
+- We don’t know exactly what will happen, but climate scientists have a good enough understanding to make process-based models of the global climate system.
+
+- Global climate models differ, so we should use outputs of multiple models to project future conditions.
+
+- The intensity of future warming will depend on atmospheric greenhouse gas concentrations. Since these can’t be known in advance, we use distinct scenarios&mdash;Shared Socioeconomic Pathways (SSPs) at present&mdash;to cover the range of possibilities.
+
+- To mitigate climate change, we must cut our greenhouse gas emissions, particularly in the energy sector!
+
+<br>
+
+#### <span style="color:#71797E">35.1.3</span>&nbsp; Phenology modeling
+
+<div style="height: 18px;"></div>
+
+- Phenology modeling is difficult, because there’s still a lot we don’t understand.
+
+- There are a number of chill and heat accumulation models, which (especially the chill models) deliver dramatically different estimates of temperature effects on phenology.
+
+- The frontrunners among models are the Dynamic Model for chill accumulation and the Growing Degree Hour Model for heat accumulation.
+
+- There are some full modeling frameworks that predict future phenology from temperature data, but these have severe shortcomings and typically ignore uncertainties.
+
+<br>
+
+#### <span style="color:#71797E">35.1.4</span>&nbsp; Phenology responses to global warming
+
+<div style="height: 18px;"></div>
+
+- So far, most plant species in most places have responded to increasing temperatures with phenology advances.
+
+- Given what we’ve learned about tree dormancy, this trend may not continue unabated in a progressively warming future.
+
+- Where temperatures are high enough to compromise chill accumulation during endodormancy, phenology advances may be slowed, halted or even reversed.
+
+- This hypothesis makes sense based on first principles, and it appears to be supported by some data, but it needs to be validated further.
+
+<br>
+
+#### <span style="color:#71797E">35.1.5</span>&nbsp; The `PhenoFlex` modeling framework
+
+<div style="height: 18px;"></div>
+
+- The `PhenoFlex` model combines the best available chill and heat models into a comprehensive framework that allows predicting the timing of spring phases.
+
+- `PhenoFlex` can be parameterized based on long-term phenology data.
+
+- Parameterization is achieved through use of an empirical fitting algorithm (*Simulated Annealing*).
+
+- The model allows characterizing cultivar-specific temperature response functions.
+
+- First results are very promising.
+
+- Among the limitations of `PhenoFlex` are the difficulty to generalize results across multiple species, and the risk of the fitting procedure returning poor parameter sets.
+
+<br>
+
+### <span style="color:#71797E">35.2</span>&nbsp; Major concepts we’ve encountered
+
+<div style="height: 18px;"></div>
+
+- **Reproducibility and transparency:** Science should be reproducible and transparent. This is often not fully achievable when we run experiments in the real world, but it is usually possible in modeling studies. We should try to document precisely what we’ve done, and we should make reproducible code available to our colleagues, together with the raw data we used.
+
+- **Tools:** We recommended using Github, R and RStudio. Within R, we used a number of add-on packages to improve our workflow. Keep looking out for ways to optimize your workflows and become more efficient.
+
+- **Automate and move on:** Learn how to automate repetitive steps, so that you can free up time for creative work. This can also allow you to easily generate similar results from lots of contexts, which might lead to insights that isolated case studies don’t offer.
+
+- **The power of R:** Advanced statistics, spatial analysis, animated figures, interactive apps, websites, blogs - all these can be produced with R. This is so much more than just the statistics program it often gets introduced as! And all these functions are free! In my opinion, learning R is one of the most rewarding investments you can make on your path to a scientific career.
+
+- **Curiosity and interdisciplinarity:** Spending your whole career in a narrow sub-field of a field may make you an expert in the thing you learned, but it may not put you in a great position to introduce new ideas that may propel your field forward. Of course this can still happen, but there’s lots of evidence that experience outside your field of specialization can provide the necessary inspiration that allows you to make a major contribution. So remain curious and retain the freedom to roam outside your field whenever you find something else interesting. Don’t specialize too strongly too early, or you may miss out on many rewarding experiences!
+
+- **Uncertainty:** Uncertainty is an integral part of every real-life issue. All our equations and models are just approximation of what’s really going on out there. We shouldn’t ignore this uncertainty, but try to embrace it, try to quantify it and communicate it whenever we can. This is still quite rarely done in science, constituting a major limitation to the use of most studies for supporting actual real-world decisions.
+    - **Ensembles:** Sometimes, as in the case of climate change, uncertainty arises from us not precisely knowing which of a set of scenarios will come true, which analysis method works best, or which of a number of models describes our system most accurately. In such cases, we can consider doing *ensemble* analyses, i.e. we use all of the options and present the population of results that emerges. This often requires quite a bit of computation, and it isn’t always realistic, but we should try whenever we can (and the ability to automate processes makes this *a lot* easier).
+    - **Remaining uncertainties:** In addition to the type of uncertainty that can be addressed by an ensemble approach, there is a good deal of additional uncertainty that is related to the real world being more complicated than models can ever be. Figuring out these uncertainties isn’t about calculating standard deviations etc. - it is about taking a hard look at the system of interest, recalling everything we’ve learned about the system, and looking for risks and uncertainties we haven’t captured yet. And it is about figuring out how to improve our study to capture as much of this as possible (or *reasonable*).
+    
+\n
+
+- **p-hacking:** p-hacking refers to the systematic analysis of lots of variables in large datasets, looking for relationships that happen to be ‘significant’. This process can easily produce significant results by accident, turning up relationships that aren’t meaningful or generally valid. The p-hacking approach is usually devoid of any real systems understanding, but based exclusively on number-crunching. If often involves no serious thoughts about which hypotheses are worth testing, and it is therefore unlikely to lead to real insights into the way the system works.
+
+- **The dangers of machine learning:** Machine-learning is particularly prone to p-hacking, because the machine that is doing the learning usually lacks proper training in agriculture, ecology or whatever field it is applied to. It also often involves learning algorithms that model users may not fully understand, so that the ‘learning’ can easily go wrong. There are of course also real machine-learning experts, who know exactly what they’re doing, but I often get the impression that many researchers who use machine-learning techniques simply learned how to use the tools, but are unaware of what can go wrong.
+
+- **Rationalizing:** An unfortunate practice in science is the production of statistics based on data, followed by the conjuring up of stories that explain the results. A creative mind can invent narratives to support whatever statistics throw our way. Whether such arguments are actually valid is usually hard to tell. This practice is called *rationalizing*, as in ‘making something (appear) rational’, when it really isn’t, and we would have been able to produce just as compelling explanations for the opposite results.
+
+- **Overfitting:** One thing that can easily go wrong with p-hacking and machine-learning, but also when fitting functions to a dataset, is overfitting. This happens when we use models to describe a process that are much more complex, and have many more degrees of freedom, than the actual process. This allows making models that fit nicely (or even perfectly) to our data, but do not have anything to do with the process we’re trying to study.
+
+- **The process that generated the data:** When building models in science, we should not strive to make models that describe our data. We should make models that describe *the process that generated the data*. This is the biological or ecological process we’re studying, and we should use all our knowledge of that process to generate the model. If the model then fits poorly, we should think about what’s wrong with our understanding, rather than adopting a different type of equation just because it fits better. If we can’t think of an ecological explanation for a model’s functional form, we should drop that model!
+
+- **The importance of theory:** All research should be guided by a theory of what’s going on. This is critical for orienting our work and our results in the larger universe of our discipline. Without a theory, statistical analyses are like poking around in the dark without knowing what to look for. With a proper theory, we can formulate hypotheses and expectations, and we can evaluate our results against these. If results are aligned with what we expected to see, we can take them as support of our conceptual understanding. If not, we get valuable food for thought that allows us to refine our hypothesis. This is what the scientific process is all about. The scientific method doesn’t work without a guiding theory.
+
+- **Conceptual modeling:** Research should start with a conceptual model that expresses our understanding of the target system and our expectation of what should happen in a particular experiment or situation. This is our representation of the theory that guides our research. It can be expressed in graphical form or in writing, but it should spell out, as explicitly as possible, what we believe going into the experiment, what assumptions we are making, and what we expect the results of our research to be. This concept should then be updated, if necessary, after we’ve concluded our experiments or analyses.
+
+- **Consistency with existing theory and prior knowledge:** Each study produces certain results, and researchers have often been tempted to draw sweeping conclusions from the results of isolated studies. Never forget to consider the body of research that has already been compiled when you draw your conclusions. A single study with unusual results cannot easily overturn decades of research that produced different findings. It is still possible, of course, to overturn the established state of knowledge, but this will require strong reasoning and careful consideration of contradictory findings, rather than just one additional datapoint that doesn’t fit the big picture.
+
+- **Model validity and model validation:** Whenever we generate a model, we should take steps to validate it. To do this properly, we should be aware of several key concepts.
+    - **Output vs. process validation:** Most often when models are validated, we are only presented with the models’ predictions, which are compared to what has been observed in reality. It is certainly important for models to pass this test - models that cannot explain reality at all are not useful. However, in addition to this *output validation*, we should also undertake *process validation* whenever we can. This involves producing a conceptual model of our system and then looking at whether the processes we find important are actually implemented in the model. We can of course use what’s in the model to update our own ideas about system processes - we are always allowed to learn from anyone and anything that can teach us something - but we should not give up our idea of what’s important too easily. If we get the impression that a model produces accurate results for the wrong reasons, e.g. despite something really important not being in the model, we should consider rejecting it, even if predictions are closely aligned with observations.
+    - **Validity domains:** When using a model for predictions, we need to make ourselves aware first, under what conditions we can expect predictions to be valid. Most often, this will be directly determined by the conditions that were used to produce the model. If a model is developed in a certain range of climate conditions, we should be very hesitant when using it in a different climate. The same applies to strong differences in socioeconomic or cultural settings between training and application conditions. To appreciate the range of conditions the model can be applied in, we should attempt to map the model’s validity domain. It may often be unrealistic to expect a model to have been calibrated under exactly the right conditions. In such situations, we shouldn’t be too hard on modelers who slightly stretch the *validity domain*. But we should always ask ourselves whether we’ve stretched it too far, and whether we can still trust our predictions. And we may sometimes have to reject the use of models in particular circumstances (even though others may have used them in such a context before).
+    - **Validation for purpose:** In validating models, we need to keep in mind the context of the prediction we’re hoping to make, and we should try to validate the model in a situation that resembles that context. E.g. if we aim to make climate change impact assessments, we shouldn’t just test our model based on data from the past, but try to find a validation dataset that was collected under warmer conditions. If we want to predict yield of the next year, we should validate our model by predicting yields for years that we have no other data for. In general, we should choose our validation dataset in such a way that it truly resembles the prediction challenge we’re planning to take on.
+    
+\n
+
+- **Our role in research:** The concepts of theories, hypotheses, predictions etc. are core ingredients of science. They are the basis of the scientific method. Yet many researchers believe that our prior knowledge, beliefs and expectations shouldn’t be allowed to interfere with the scientific process. Scientists, they may say, are supposed to be strictly *objective*, rather than using their *subjective* judgment. This is a major debate in science that has been going on for centuries. Personally, I am convinced that injecting science with a researcher’s subjective knowledge, a.k.a. expertise or professional judgment, usually makes science better, not worse. This should at least be the case where scientists remain critical of their own knowledge, strive to make all their assumptions explicit and continually question what they firmly believe to be true. Developing a mindset that allows us to consistently apply such behavior may be a more important step to becoming a mature researcher than staying abreast with all the fancy analysis methods our field has to offer.
 
 ---
